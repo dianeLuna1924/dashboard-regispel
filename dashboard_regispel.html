@@ -27,7 +27,7 @@
         </div>
         <div class="mt-4 md:mt-0 flex gap-3">
             <label class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-lg cursor-pointer flex items-center gap-2 transition shadow-lg">
-                <i class="fa-solid fa-file-excel"></i> Carregar Planilha Excel
+                <i class="fa-solid fa-file-excel"></i> Carregar Planilha Local
                 <input type="file" id="inputExcel" accept=".xlsx, .xls, .xlsm" class="hidden">
             </label>
             <button id="btnLimpar" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg transition">
@@ -35,6 +35,12 @@
             </button>
         </div>
     </header>
+
+    <!-- Indicador de Carregamento Automático -->
+    <div id="statusCarregamento" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold rounded-lg flex items-center gap-2">
+        <i class="fa-solid fa-spinner fa-spin text-sm"></i>
+        <span>Carregando a planilha mais recente do servidor...</span>
+    </div>
 
     <!-- Filtros -->
     <div class="card-dash p-4 mb-6 grid grid-cols-1 md:grid-cols-6 gap-4">
@@ -206,6 +212,41 @@
         let chartStatusInstance = null;
         let chartQtdVendedorInstance = null;
         let chartVendedorEfetivoInstance = null;
+
+        // Tenta carregar automaticamente a planilha hospedada no mesmo repositório do GitHub
+        window.addEventListener('DOMContentLoaded', () => {
+            carregarPlanilhaAutomatica();
+        });
+
+        function carregarPlanilhaAutomatica() {
+            const statusDiv = document.getElementById('statusCarregamento');
+            statusDiv.classList.remove('hidden');
+
+            // Nome padrão do arquivo Excel no GitHub (deve ter exatamente esse nome no repositório)
+            const nomeArquivoGitHub = 'Base_Orcamentos.xlsx';
+
+            fetch(nomeArquivoGitHub + '?v=' + new Date().getTime())
+                .then(response => {
+                    if (!response.ok) throw new Error('Planilha padrão não encontrada no GitHub.');
+                    return response.arrayBuffer();
+                })
+                .then(buffer => {
+                    const data = new Uint8Array(buffer);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    let sheetName = "Base_Orcamentos";
+                    if (!workbook.SheetNames.includes(sheetName)) sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+                    
+                    processarDadosBase(json);
+                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i><span class="text-emerald-700">Dados da planilha mais recente carregados automaticamente!</span>`;
+                    setTimeout(() => statusDiv.classList.add('hidden'), 4000);
+                })
+                .catch(err => {
+                    statusDiv.classList.add('hidden');
+                    console.log('Modo manual: Nenhuma planilha automática encontrada no repositório.', err);
+                });
+        }
 
         document.getElementById('inputExcel').addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -574,7 +615,6 @@
                 }
             });
 
-            // Filtra mantendo APENAS vendedores que tenham movimentação total R$ > 0
             const vendedoresComValores = Object.keys(vendEfetivoMap)
                 .filter(v => vendEfetivoMap[v].totalVal > 0)
                 .sort((a,b) => vendEfetivoMap[b].totalVal - vendEfetivoMap[a].totalVal);
