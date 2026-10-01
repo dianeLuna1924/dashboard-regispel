@@ -27,7 +27,7 @@
         </div>
         <div class="mt-4 md:mt-0 flex gap-3">
             <label class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-lg cursor-pointer flex items-center gap-2 transition shadow-lg">
-                <i class="fa-solid fa-file-excel"></i> Carregar Planilha Excel
+                <i class="fa-solid fa-file-excel"></i> Carregar Planilha Local
                 <input type="file" id="inputExcel" accept=".xlsx, .xls, .xlsm" class="hidden">
             </label>
             <button id="btnLimpar" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg transition">
@@ -39,7 +39,7 @@
     <!-- Indicador de Carregamento Automático -->
     <div id="statusCarregamento" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold rounded-lg flex items-center gap-2">
         <i class="fa-solid fa-spinner fa-spin text-sm"></i>
-        <span>Carregando a planilha mais recente...</span>
+        <span>Carregando os dados atualizados do servidor...</span>
     </div>
 
     <!-- Filtros -->
@@ -221,12 +221,11 @@
             const statusDiv = document.getElementById('statusCarregamento');
             statusDiv.classList.remove('hidden');
 
-            // URL direta do repositório no GitHub para o ficheiro xlsm
-            const urlPlanilha = 'https://raw.githubusercontent.com/dianeLuna1924/dashboard-regispel/main/Controle_de_Orcamentos_Regispel.xlsm';
+            const nomeArquivoGitHub = 'Base_Orcamentos.xlsx';
 
-            fetch(urlPlanilha + '?v=' + new Date().getTime())
+            fetch(nomeArquivoGitHub + '?v=' + new Date().getTime())
                 .then(response => {
-                    if (!response.ok) throw new Error('Não foi possível carregar a planilha do GitHub.');
+                    if (!response.ok) throw new Error('Planilha padrão não encontrada.');
                     return response.arrayBuffer();
                 })
                 .then(buffer => {
