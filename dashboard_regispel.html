@@ -221,6 +221,7 @@
             const statusDiv = document.getElementById('statusCarregamento');
             statusDiv.classList.remove('hidden');
 
+            // Nome exato da planilha salva no GitHub
             const nomeArquivoGitHub = 'Controle_de_Orcamentos_Regispel.xlsm';
 
             fetch(nomeArquivoGitHub + '?v=' + new Date().getTime())
