@@ -291,27 +291,42 @@
                 const numOrc = (r[0] || "").toString().trim();
                 if (!numOrc) continue;
 
-                let valR = converterValor(r[17]); // Coluna R
+                // Leitura flexível dos valores
+                let totalEfetivoVal = converterValor(r[16]); // Coluna Q (Total Efetivo)
+                let valR = converterValor(r[17]);           // Coluna R (Ticket Médio / Total)
+
+                // Fallback de valores caso as colunas Q ou R venham zeradas da planilha
+                const t1 = converterValor(r[9]);  // Coluna J (Total 1)
+                const t2 = converterValor(r[12]); // Coluna M (Total 2)
+                const t3 = converterValor(r[15]); // Coluna P (Total 3)
+
+                if (totalEfetivoVal === 0) {
+                    if (t1 > 0) totalEfetivoVal = t1;
+                    else if (t2 > 0) totalEfetivoVal = t2;
+                    else if (t3 > 0) totalEfetivoVal = t3;
+                }
 
                 if (valR === 0) {
-                    const t1 = converterValor(r[10]);
-                    const t2 = converterValor(r[12]);
-                    const t3 = converterValor(r[15]);
-                    
-                    let somaT = 0;
-                    let countT = 0;
+                    let somaT = 0, countT = 0;
                     if (t1 > 0) { somaT += t1; countT++; }
                     if (t2 > 0) { somaT += t2; countT++; }
                     if (t3 > 0) { somaT += t3; countT++; }
-
-                    if (countT > 0) {
-                        valR = somaT / countT;
-                    }
+                    if (countT > 0) valR = somaT / countT;
+                    else valR = totalEfetivoVal;
                 }
 
-                let status = (r[18] || "").toString().trim();
-                const temRespostaReal = status !== "" && status !== "0";
-                if (!status) status = "Sem Resposta";
+                // Leitura flexível do Status (Coluna T = r[19] ou Coluna S = r[18])
+                let statusBruto = (r[19] || r[18] || "").toString().trim();
+                let statusLimpo = statusBruto.toUpperCase();
+
+                let statusClassificado = "Em Negociação";
+                if (statusLimpo.includes("APROVAD") || statusLimpo.includes("MÍNIMA") || statusLimpo.includes("MINIMA") || statusLimpo.includes("FECHAD")) {
+                    statusClassificado = "Aprovado";
+                } else if (statusLimpo.includes("PERDID") || statusLimpo.includes("CANCELAD")) {
+                    statusClassificado = "Perdido/Cancelado";
+                } else if (statusBruto !== "" && statusBruto !== "0" && !statusLimpo.includes("SEM RESPOSTA")) {
+                    statusClassificado = statusBruto;
+                }
 
                 let dataFormatada = "";
                 let ano = null;
@@ -344,10 +359,9 @@
                     descricao: (r[5] || "").toString().trim(),
                     papel: (r[6] || "").toString().trim(),
                     qtd: converterValor(r[7]),
-                    totalEfetivo: converterValor(r[16]),
+                    totalEfetivo: totalEfetivoVal,
                     valorColunaR: valR,
-                    status: status,
-                    temRespostaReal: temRespostaReal
+                    status: statusClassificado
                 });
             }
 
@@ -415,15 +429,15 @@
                 somaColunaR += d.valorColunaR;
 
                 const st = d.status.toUpperCase();
-                if (st === "APROVADO") {
+                if (st.includes("APROVAD")) {
                     valorAprovadoEfetivo += d.totalEfetivo;
                     cntAprov++;
-                } else if (st === "EM NEGOCIAÇÃO" || st === "EM NEGOCIACAO") {
-                    valorNegociacao += d.totalEfetivo;
-                    cntNegoc++;
-                } else if (st === "PERDIDO" || st === "CANCELADO") {
+                } else if (st.includes("PERDID") || st.includes("CANCELAD")) {
                     valorPerdidoCancelado += d.totalEfetivo;
                     cntPerd++;
+                } else {
+                    valorNegociacao += d.totalEfetivo;
+                    cntNegoc++;
                 }
             });
 
@@ -461,11 +475,10 @@
 
             let html = "";
             dados.forEach(d => {
-                let badgeCor = "bg-slate-200 text-slate-700";
+                let badgeCor = "bg-amber-100 text-amber-700 border border-amber-300";
                 const st = d.status.toUpperCase();
-                if (st === "APROVADO") badgeCor = "bg-emerald-100 text-emerald-700 border border-emerald-300";
-                else if (st === "EM NEGOCIAÇÃO" || st === "EM NEGOCIACAO") badgeCor = "bg-amber-100 text-amber-700 border border-amber-300";
-                else if (st === "PERDIDO" || st === "CANCELADO") badgeCor = "bg-rose-100 text-rose-700 border border-rose-300";
+                if (st.includes("APROVAD")) badgeCor = "bg-emerald-100 text-emerald-700 border border-emerald-300";
+                else if (st.includes("PERDID") || st.includes("CANCELAD")) badgeCor = "bg-rose-100 text-rose-700 border border-rose-300";
 
                 html += `
                     <tr class="hover:bg-slate-50 transition">
@@ -597,17 +610,17 @@
                         };
                     }
                     const st = d.status.toUpperCase();
-                    if (st === "APROVADO") {
+                    if (st.includes("APROVAD")) {
                         vendEfetivoMap[d.vendedor].aprovadoVal += d.totalEfetivo;
                         vendEfetivoMap[d.vendedor].aprovadoQtd += 1;
                         vendEfetivoMap[d.vendedor].totalVal += d.totalEfetivo;
-                    } else if (st === "EM NEGOCIAÇÃO" || st === "EM NEGOCIACAO") {
-                        vendEfetivoMap[d.vendedor].negociacaoVal += d.totalEfetivo;
-                        vendEfetivoMap[d.vendedor].negociacaoQtd += 1;
-                        vendEfetivoMap[d.vendedor].totalVal += d.totalEfetivo;
-                    } else if (st === "PERDIDO" || st === "CANCELADO") {
+                    } else if (st.includes("PERDID") || st.includes("CANCELAD")) {
                         vendEfetivoMap[d.vendedor].perdidoVal += d.totalEfetivo;
                         vendEfetivoMap[d.vendedor].perdidoQtd += 1;
+                        vendEfetivoMap[d.vendedor].totalVal += d.totalEfetivo;
+                    } else {
+                        vendEfetivoMap[d.vendedor].negociacaoVal += d.totalEfetivo;
+                        vendEfetivoMap[d.vendedor].negociacaoQtd += 1;
                         vendEfetivoMap[d.vendedor].totalVal += d.totalEfetivo;
                     }
                 }
