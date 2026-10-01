@@ -213,7 +213,6 @@
         let chartQtdVendedorInstance = null;
         let chartVendedorEfetivoInstance = null;
 
-        // Tenta carregar automaticamente a planilha hospedada no mesmo repositório do GitHub
         window.addEventListener('DOMContentLoaded', () => {
             carregarPlanilhaAutomatica();
         });
@@ -222,8 +221,7 @@
             const statusDiv = document.getElementById('statusCarregamento');
             statusDiv.classList.remove('hidden');
 
-            // Nome padrão do arquivo Excel no GitHub (deve ter exatamente esse nome no repositório)
-            const nomeArquivoGitHub = 'Base_Orcamentos.xlsx';
+            const nomeArquivoGitHub = 'Controle_de_Orcamentos_Regispel.xlsm';
 
             fetch(nomeArquivoGitHub + '?v=' + new Date().getTime())
                 .then(response => {
