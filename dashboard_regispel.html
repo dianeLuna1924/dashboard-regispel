@@ -16,7 +16,7 @@
 </head>
 <body class="p-6">
 
-    <!-- Header -->
+    <!-- Header Principal -->
     <header class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b border-slate-300">
         <div>
             <div class="flex items-center gap-2">
@@ -42,7 +42,7 @@
         <span>Carregando os dados atualizados do servidor...</span>
     </div>
 
-    <!-- Filtros -->
+    <!-- Filtros Superior -->
     <div class="card-dash p-4 mb-6 grid grid-cols-1 md:grid-cols-6 gap-4">
         <div>
             <label class="text-xs font-semibold text-slate-500 uppercase">Ano</label>
@@ -172,7 +172,7 @@
         </div>
     </div>
 
-    <!-- Tabela -->
+    <!-- Tabela de Detalhamento (Final da Página) -->
     <div class="card-dash p-5 mb-6">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-base font-bold text-slate-800">
@@ -422,23 +422,19 @@
 
             filtrados.forEach(d => {
                 somaColunaR += d.valorColunaR;
-                valorAprovadoEfetivo += d.totalEfetivo; // SOMA DIRETA DA COLUNA Q (R$ 170.894,70)
 
                 const st = d.status.toUpperCase();
                 if (st.includes("PERDID") || st.includes("CANCELAD")) {
                     valorPerdidoCancelado += d.valorColunaR;
                     cntPerd++;
                 } else if (d.totalEfetivo > 0 || st.includes("APROVAD")) {
+                    valorAprovadoEfetivo += d.totalEfetivo;
                     cntAprov++;
                 } else {
                     valorNegociacao += d.valorColunaR;
                     cntNegoc++;
                 }
             });
-
-            // Ajusta o valor em negociação para a diferença exata do total cotado menos o efetivado
-            valorNegociacao = somaColunaR - valorAprovadoEfetivo - valorPerdidoCancelado;
-            if (valorNegociacao < 0) valorNegociacao = 0;
 
             const taxaConversao = totalItens > 0 ? ((cntAprov / totalItens) * 100).toFixed(1) : 0;
 
@@ -599,7 +595,7 @@
                 }
             });
 
-            // 3. Volume R$ por Vendedor
+            // 3. Volume R$ por Vendedor (SOMENTE VENDEDORES COM VALOR MAIOR QUE R$ 0,00)
             const vendEfetivoMap = {};
 
             dados.forEach(d => {
@@ -629,6 +625,7 @@
                 }
             });
 
+            // FILTRO ESTRITO: EXIBE APENAS VENDEDORES COM VOLUME TOTAL MAIOR QUE R$ 0,00
             const vendedoresComValores = Object.keys(vendEfetivoMap)
                 .filter(v => vendEfetivoMap[v].totalVal > 0)
                 .sort((a,b) => vendEfetivoMap[b].totalVal - vendEfetivoMap[a].totalVal);
@@ -724,7 +721,7 @@
 </head>
 <body class="p-6">
 
-    <!-- Header -->
+    <!-- Header Principal -->
     <header class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b border-slate-300">
         <div>
             <div class="flex items-center gap-2">
@@ -750,7 +747,7 @@
         <span>Carregando os dados atualizados do servidor...</span>
     </div>
 
-    <!-- Filtros -->
+    <!-- Filtros Superior -->
     <div class="card-dash p-4 mb-6 grid grid-cols-1 md:grid-cols-6 gap-4">
         <div>
             <label class="text-xs font-semibold text-slate-500 uppercase">Ano</label>
@@ -880,7 +877,7 @@
         </div>
     </div>
 
-    <!-- Tabela -->
+    <!-- Tabela de Detalhamento (Final da Página) -->
     <div class="card-dash p-5 mb-6">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-base font-bold text-slate-800">
@@ -1130,23 +1127,19 @@
 
             filtrados.forEach(d => {
                 somaColunaR += d.valorColunaR;
-                valorAprovadoEfetivo += d.totalEfetivo; // SOMA DIRETA DA COLUNA Q (R$ 170.894,70)
 
                 const st = d.status.toUpperCase();
                 if (st.includes("PERDID") || st.includes("CANCELAD")) {
                     valorPerdidoCancelado += d.valorColunaR;
                     cntPerd++;
                 } else if (d.totalEfetivo > 0 || st.includes("APROVAD")) {
+                    valorAprovadoEfetivo += d.totalEfetivo;
                     cntAprov++;
                 } else {
                     valorNegociacao += d.valorColunaR;
                     cntNegoc++;
                 }
             });
-
-            // Ajusta o valor em negociação para a diferença exata do total cotado menos o efetivado
-            valorNegociacao = somaColunaR - valorAprovadoEfetivo - valorPerdidoCancelado;
-            if (valorNegociacao < 0) valorNegociacao = 0;
 
             const taxaConversao = totalItens > 0 ? ((cntAprov / totalItens) * 100).toFixed(1) : 0;
 
@@ -1307,7 +1300,7 @@
                 }
             });
 
-            // 3. Volume R$ por Vendedor
+            // 3. Volume R$ por Vendedor (SOMENTE VENDEDORES COM VALOR MAIOR QUE R$ 0,00)
             const vendEfetivoMap = {};
 
             dados.forEach(d => {
@@ -1337,6 +1330,7 @@
                 }
             });
 
+            // FILTRO ESTRITO: EXIBE APENAS VENDEDORES COM VOLUME TOTAL MAIOR QUE R$ 0,00
             const vendedoresComValores = Object.keys(vendEfetivoMap)
                 .filter(v => vendEfetivoMap[v].totalVal > 0)
                 .sort((a,b) => vendEfetivoMap[b].totalVal - vendEfetivoMap[a].totalVal);
