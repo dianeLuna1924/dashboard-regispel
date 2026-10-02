@@ -171,7 +171,7 @@
         </div>
     </div>
 
-    <!-- Tabela de Detalhamento -->
+    <!-- Tabela de Detalhamento (FIM DA PÁGINA) -->
     <div class="card-dash p-5 mb-6">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-base font-bold text-slate-800">
@@ -290,12 +290,12 @@
                 const numOrc = (r[0] || "").toString().trim();
                 if (!numOrc) continue;
 
-                let valQ = converterValor(r[16]); // Coluna Q (Valor Total Efetivo)
-                let valR = converterValor(r[17]); // Coluna R (Ticket Médio)
+                let valQ = converterValor(r[16]);
+                let valR = converterValor(r[17]);
 
-                const t1 = converterValor(r[9]);  // Coluna J (Total 1)
-                const t2 = converterValor(r[12]); // Coluna M (Total 2)
-                const t3 = converterValor(r[15]); // Coluna P (Total 3)
+                const t1 = converterValor(r[9]);
+                const t2 = converterValor(r[12]);
+                const t3 = converterValor(r[15]);
 
                 if (valR === 0) {
                     let somaT = 0, countT = 0;
@@ -306,7 +306,6 @@
                     else valR = valQ;
                 }
 
-                // LEITURA RIGOROSA DO STATUS PELA COLUNA S (r[18]) E MOTIVO PERDA U (r[20])
                 let statusBruto = (r[18] || "").toString().trim();
                 let motivoPerda = (r[20] || "").toString().trim();
 
@@ -467,7 +466,7 @@
             document.getElementById('countTabela').innerText = dados.length;
 
             if (dados.length === 0) {
-                corpo.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-slate-400">Nenhum orçamento encontrado para os filtros selecionados.</td>处/tr>`;
+                corpo.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-slate-400">Nenhum orçamento encontrado para os filtros selecionados.</td></tr>`;
                 return;
             }
 
@@ -598,7 +597,7 @@
                 }
             });
 
-            // 3. Volume R$ por Vendedor (INCLUI NO EIXO APENAS QUEM TEM APROVADO, PERDIDO OU CANCELADO)
+            // 3. Volume R$ por Vendedor (Apenas com Status Definido)
             const vendEfetivoMap = {};
 
             dados.forEach(d => {
@@ -608,7 +607,7 @@
                             negociacaoVal: 0, negociacaoQtd: 0,
                             aprovadoVal: 0, aprovadoQtd: 0,
                             perdidoVal: 0, perdidoQtd: 0,
-                            valStatusDefinido: 0 // Soma apenas Aprovado / Perdido / Cancelado
+                            valStatusDefinido: 0
                         };
                     }
                     if (d.status === "Perdido/Cancelado") {
@@ -626,7 +625,6 @@
                 }
             });
 
-            // FILTRO DEFINITIVO: Só entra no gráfico quem tem valStatusDefinido > 0
             const vendedoresComValores = Object.keys(vendEfetivoMap)
                 .filter(v => vendEfetivoMap[v].valStatusDefinido > 0)
                 .sort((a,b) => vendEfetivoMap[b].valStatusDefinido - vendEfetivoMap[a].valStatusDefinido);
@@ -877,7 +875,7 @@
         </div>
     </div>
 
-    <!-- Tabela de Detalhamento -->
+    <!-- Tabela de Detalhamento (FIM DA PÁGINA) -->
     <div class="card-dash p-5 mb-6">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-base font-bold text-slate-800">
@@ -996,12 +994,12 @@
                 const numOrc = (r[0] || "").toString().trim();
                 if (!numOrc) continue;
 
-                let valQ = converterValor(r[16]); // Coluna Q (Valor Total Efetivo)
-                let valR = converterValor(r[17]); // Coluna R (Ticket Médio)
+                let valQ = converterValor(r[16]);
+                let valR = converterValor(r[17]);
 
-                const t1 = converterValor(r[9]);  // Coluna J (Total 1)
-                const t2 = converterValor(r[12]); // Coluna M (Total 2)
-                const t3 = converterValor(r[15]); // Coluna P (Total 3)
+                const t1 = converterValor(r[9]);
+                const t2 = converterValor(r[12]);
+                const t3 = converterValor(r[15]);
 
                 if (valR === 0) {
                     let somaT = 0, countT = 0;
@@ -1012,7 +1010,6 @@
                     else valR = valQ;
                 }
 
-                // LEITURA RIGOROSA DO STATUS PELA COLUNA S (r[18]) E MOTIVO PERDA U (r[20])
                 let statusBruto = (r[18] || "").toString().trim();
                 let motivoPerda = (r[20] || "").toString().trim();
 
@@ -1173,7 +1170,7 @@
             document.getElementById('countTabela').innerText = dados.length;
 
             if (dados.length === 0) {
-                corpo.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-slate-400">Nenhum orçamento encontrado para os filtros selecionados.</td>处/tr>`;
+                corpo.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-slate-400">Nenhum orçamento encontrado para os filtros selecionados.</td></tr>`;
                 return;
             }
 
@@ -1304,7 +1301,7 @@
                 }
             });
 
-            // 3. Volume R$ por Vendedor (INCLUI NO EIXO APENAS QUEM TEM APROVADO, PERDIDO OU CANCELADO)
+            // 3. Volume R$ por Vendedor (Apenas com Status Definido)
             const vendEfetivoMap = {};
 
             dados.forEach(d => {
@@ -1314,7 +1311,7 @@
                             negociacaoVal: 0, negociacaoQtd: 0,
                             aprovadoVal: 0, aprovadoQtd: 0,
                             perdidoVal: 0, perdidoQtd: 0,
-                            valStatusDefinido: 0 // Soma apenas Aprovado / Perdido / Cancelado
+                            valStatusDefinido: 0
                         };
                     }
                     if (d.status === "Perdido/Cancelado") {
@@ -1332,7 +1329,6 @@
                 }
             });
 
-            // FILTRO DEFINITIVO: Só entra no gráfico quem tem valStatusDefinido > 0
             const vendedoresComValores = Object.keys(vendEfetivoMap)
                 .filter(v => vendEfetivoMap[v].valStatusDefinido > 0)
                 .sort((a,b) => vendEfetivoMap[b].valStatusDefinido - vendEfetivoMap[a].valStatusDefinido);
