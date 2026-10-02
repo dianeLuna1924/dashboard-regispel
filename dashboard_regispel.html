@@ -36,13 +36,12 @@
         </div>
     </header>
 
-    <!-- Indicador de Carregamento Automático -->
     <div id="statusCarregamento" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold rounded-lg flex items-center gap-2">
         <i class="fa-solid fa-spinner fa-spin text-sm"></i>
         <span>Carregando os dados atualizados do servidor...</span>
     </div>
 
-    <!-- Filtros Superior -->
+    <!-- Filtros -->
     <div class="card-dash p-4 mb-6 grid grid-cols-1 md:grid-cols-6 gap-4">
         <div>
             <label class="text-xs font-semibold text-slate-500 uppercase">Ano</label>
@@ -117,7 +116,7 @@
                 <p id="subTotalNegociacao" class="text-xl font-bold text-slate-800 mt-1">R$ 0,00</p>
             </div>
             <div class="bg-slate-100 p-3 rounded-lg border border-slate-200">
-                <p class="text-xs font-semibold text-emerald-600 uppercase"><i class="fa-solid fa-circle-check mr-1"></i> Total Aprovado / Efetivado</p>
+                <p class="text-xs font-semibold text-emerald-600 uppercase"><i class="fa-solid fa-circle-check mr-1"></i> Total Aprovado</p>
                 <p id="subTotalAprovadoEfetivo" class="text-xl font-bold text-slate-800 mt-1">R$ 0,00</p>
             </div>
             <div class="bg-slate-100 p-3 rounded-lg border border-slate-200">
@@ -172,7 +171,7 @@
         </div>
     </div>
 
-    <!-- Tabela de Detalhamento (Final da Página) -->
+    <!-- Tabela de Detalhamento -->
     <div class="card-dash p-5 mb-6">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-base font-bold text-slate-800">
@@ -317,7 +316,7 @@
 
                 if (statusLimpo.includes("PERDID") || statusLimpo.includes("CANCELAD") || statusLimpo.includes("NÃO FECHAD") || statusLimpo.includes("NAO FECHAD") || motivoLimpo !== "") {
                     statusClassificado = "Perdido/Cancelado";
-                } else if (statusLimpo === "APROVADO" || statusLimpo === "APROVADA" || statusLimpo.includes("FECHAD") || valQ > 0) {
+                } else if (statusLimpo === "APROVADO" || statusLimpo === "APROVADA" || statusLimpo.includes("FECHAD")) {
                     statusClassificado = "Aprovado";
                 } else if (statusBruto !== "" && statusBruto !== "0" && !statusLimpo.includes("SEM RESPOSTA")) {
                     statusClassificado = statusBruto;
@@ -427,8 +426,9 @@
                 if (st.includes("PERDID") || st.includes("CANCELAD")) {
                     valorPerdidoCancelado += d.valorColunaR;
                     cntPerd++;
-                } else if (d.totalEfetivo > 0 || st.includes("APROVAD")) {
-                    valorAprovadoEfetivo += d.totalEfetivo;
+                } else if (st === "APROVADO" || st.includes("APROVAD")) {
+                    // SOMA ESTRITA APENAS SE O STATUS FOR APROVADO
+                    valorAprovadoEfetivo += (d.totalEfetivo > 0 ? d.totalEfetivo : d.valorColunaR);
                     cntAprov++;
                 } else {
                     valorNegociacao += d.valorColunaR;
@@ -451,7 +451,7 @@
             document.getElementById('kpiConversao').innerText = taxaConversao + '%';
 
             document.getElementById('cntNegociacao').innerText = `${cntNegoc} em negociação`;
-            document.getElementById('cntAprovado').innerText = `${cntAprov} aprovados/efetivados`;
+            document.getElementById('cntAprovado').innerText = `${cntAprov} aprovados de ${totalItens}`;
             document.getElementById('cntPerdido').innerText = `${cntPerd} cancelados/perdidos`;
 
             renderizarGraficos(filtrados);
@@ -471,7 +471,7 @@
             dados.forEach(d => {
                 let badgeCor = "bg-amber-100 text-amber-700 border border-amber-300";
                 const st = d.status.toUpperCase();
-                if (d.totalEfetivo > 0 || st.includes("APROVAD")) badgeCor = "bg-emerald-100 text-emerald-700 border border-emerald-300";
+                if (st.includes("APROVAD")) badgeCor = "bg-emerald-100 text-emerald-700 border border-emerald-300";
                 else if (st.includes("PERDID") || st.includes("CANCELAD")) badgeCor = "bg-rose-100 text-rose-700 border border-rose-300";
 
                 html += `
@@ -510,7 +510,7 @@
                 options: { responsive: true, maintainAspectRatio: false }
             });
 
-            // 2. Ticket Médio e Qtd por Vendedor
+            // 2. Ticket Médio e Qtd por Vendedor (APENAS VENDEDORES COM VALORES REAIS)
             const vendSummary = {};
             dados.forEach(d => {
                 if (d.vendedor) {
@@ -595,7 +595,7 @@
                 }
             });
 
-            // 3. Volume R$ por Vendedor (SOMENTE VENDEDORES COM VALOR MAIOR QUE R$ 0,00)
+            // 3. Volume R$ por Vendedor (FILTRA APENAS VENDEDORES COM VALORES REAIS > R$ 0)
             const vendEfetivoMap = {};
 
             dados.forEach(d => {
@@ -613,10 +613,11 @@
                         vendEfetivoMap[d.vendedor].perdidoVal += d.valorColunaR;
                         vendEfetivoMap[d.vendedor].perdidoQtd += 1;
                         vendEfetivoMap[d.vendedor].totalVal += d.valorColunaR;
-                    } else if (d.totalEfetivo > 0 || st.includes("APROVAD")) {
-                        vendEfetivoMap[d.vendedor].aprovadoVal += d.totalEfetivo;
+                    } else if (st === "APROVADO" || st.includes("APROVAD")) {
+                        let valAprov = d.totalEfetivo > 0 ? d.totalEfetivo : d.valorColunaR;
+                        vendEfetivoMap[d.vendedor].aprovadoVal += valAprov;
                         vendEfetivoMap[d.vendedor].aprovadoQtd += 1;
-                        vendEfetivoMap[d.vendedor].totalVal += d.totalEfetivo;
+                        vendEfetivoMap[d.vendedor].totalVal += valAprov;
                     } else {
                         vendEfetivoMap[d.vendedor].negociacaoVal += d.valorColunaR;
                         vendEfetivoMap[d.vendedor].negociacaoQtd += 1;
@@ -625,7 +626,7 @@
                 }
             });
 
-            // FILTRO ESTRITO: EXIBE APENAS VENDEDORES COM VOLUME TOTAL MAIOR QUE R$ 0,00
+            // EXIBE APENAS OS VENDEDORES QUE TÊM MAIS DE R$ 0 NO TOTAL
             const vendedoresComValores = Object.keys(vendEfetivoMap)
                 .filter(v => vendEfetivoMap[v].totalVal > 0)
                 .sort((a,b) => vendEfetivoMap[b].totalVal - vendEfetivoMap[a].totalVal);
@@ -741,13 +742,12 @@
         </div>
     </header>
 
-    <!-- Indicador de Carregamento Automático -->
     <div id="statusCarregamento" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold rounded-lg flex items-center gap-2">
         <i class="fa-solid fa-spinner fa-spin text-sm"></i>
         <span>Carregando os dados atualizados do servidor...</span>
     </div>
 
-    <!-- Filtros Superior -->
+    <!-- Filtros -->
     <div class="card-dash p-4 mb-6 grid grid-cols-1 md:grid-cols-6 gap-4">
         <div>
             <label class="text-xs font-semibold text-slate-500 uppercase">Ano</label>
@@ -822,7 +822,7 @@
                 <p id="subTotalNegociacao" class="text-xl font-bold text-slate-800 mt-1">R$ 0,00</p>
             </div>
             <div class="bg-slate-100 p-3 rounded-lg border border-slate-200">
-                <p class="text-xs font-semibold text-emerald-600 uppercase"><i class="fa-solid fa-circle-check mr-1"></i> Total Aprovado / Efetivado</p>
+                <p class="text-xs font-semibold text-emerald-600 uppercase"><i class="fa-solid fa-circle-check mr-1"></i> Total Aprovado</p>
                 <p id="subTotalAprovadoEfetivo" class="text-xl font-bold text-slate-800 mt-1">R$ 0,00</p>
             </div>
             <div class="bg-slate-100 p-3 rounded-lg border border-slate-200">
@@ -877,7 +877,7 @@
         </div>
     </div>
 
-    <!-- Tabela de Detalhamento (Final da Página) -->
+    <!-- Tabela de Detalhamento -->
     <div class="card-dash p-5 mb-6">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-base font-bold text-slate-800">
@@ -1022,7 +1022,7 @@
 
                 if (statusLimpo.includes("PERDID") || statusLimpo.includes("CANCELAD") || statusLimpo.includes("NÃO FECHAD") || statusLimpo.includes("NAO FECHAD") || motivoLimpo !== "") {
                     statusClassificado = "Perdido/Cancelado";
-                } else if (statusLimpo === "APROVADO" || statusLimpo === "APROVADA" || statusLimpo.includes("FECHAD") || valQ > 0) {
+                } else if (statusLimpo === "APROVADO" || statusLimpo === "APROVADA" || statusLimpo.includes("FECHAD")) {
                     statusClassificado = "Aprovado";
                 } else if (statusBruto !== "" && statusBruto !== "0" && !statusLimpo.includes("SEM RESPOSTA")) {
                     statusClassificado = statusBruto;
@@ -1132,8 +1132,9 @@
                 if (st.includes("PERDID") || st.includes("CANCELAD")) {
                     valorPerdidoCancelado += d.valorColunaR;
                     cntPerd++;
-                } else if (d.totalEfetivo > 0 || st.includes("APROVAD")) {
-                    valorAprovadoEfetivo += d.totalEfetivo;
+                } else if (st === "APROVADO" || st.includes("APROVAD")) {
+                    // SOMA ESTRITA APENAS SE O STATUS FOR APROVADO
+                    valorAprovadoEfetivo += (d.totalEfetivo > 0 ? d.totalEfetivo : d.valorColunaR);
                     cntAprov++;
                 } else {
                     valorNegociacao += d.valorColunaR;
@@ -1156,7 +1157,7 @@
             document.getElementById('kpiConversao').innerText = taxaConversao + '%';
 
             document.getElementById('cntNegociacao').innerText = `${cntNegoc} em negociação`;
-            document.getElementById('cntAprovado').innerText = `${cntAprov} aprovados/efetivados`;
+            document.getElementById('cntAprovado').innerText = `${cntAprov} aprovados de ${totalItens}`;
             document.getElementById('cntPerdido').innerText = `${cntPerd} cancelados/perdidos`;
 
             renderizarGraficos(filtrados);
@@ -1176,7 +1177,7 @@
             dados.forEach(d => {
                 let badgeCor = "bg-amber-100 text-amber-700 border border-amber-300";
                 const st = d.status.toUpperCase();
-                if (d.totalEfetivo > 0 || st.includes("APROVAD")) badgeCor = "bg-emerald-100 text-emerald-700 border border-emerald-300";
+                if (st.includes("APROVAD")) badgeCor = "bg-emerald-100 text-emerald-700 border border-emerald-300";
                 else if (st.includes("PERDID") || st.includes("CANCELAD")) badgeCor = "bg-rose-100 text-rose-700 border border-rose-300";
 
                 html += `
@@ -1215,7 +1216,7 @@
                 options: { responsive: true, maintainAspectRatio: false }
             });
 
-            // 2. Ticket Médio e Qtd por Vendedor
+            // 2. Ticket Médio e Qtd por Vendedor (APENAS VENDEDORES COM VALORES REAIS)
             const vendSummary = {};
             dados.forEach(d => {
                 if (d.vendedor) {
@@ -1300,7 +1301,7 @@
                 }
             });
 
-            // 3. Volume R$ por Vendedor (SOMENTE VENDEDORES COM VALOR MAIOR QUE R$ 0,00)
+            // 3. Volume R$ por Vendedor (FILTRA APENAS VENDEDORES COM VALORES REAIS > R$ 0)
             const vendEfetivoMap = {};
 
             dados.forEach(d => {
@@ -1318,10 +1319,11 @@
                         vendEfetivoMap[d.vendedor].perdidoVal += d.valorColunaR;
                         vendEfetivoMap[d.vendedor].perdidoQtd += 1;
                         vendEfetivoMap[d.vendedor].totalVal += d.valorColunaR;
-                    } else if (d.totalEfetivo > 0 || st.includes("APROVAD")) {
-                        vendEfetivoMap[d.vendedor].aprovadoVal += d.totalEfetivo;
+                    } else if (st === "APROVADO" || st.includes("APROVAD")) {
+                        let valAprov = d.totalEfetivo > 0 ? d.totalEfetivo : d.valorColunaR;
+                        vendEfetivoMap[d.vendedor].aprovadoVal += valAprov;
                         vendEfetivoMap[d.vendedor].aprovadoQtd += 1;
-                        vendEfetivoMap[d.vendedor].totalVal += d.totalEfetivo;
+                        vendEfetivoMap[d.vendedor].totalVal += valAprov;
                     } else {
                         vendEfetivoMap[d.vendedor].negociacaoVal += d.valorColunaR;
                         vendEfetivoMap[d.vendedor].negociacaoQtd += 1;
@@ -1330,7 +1332,7 @@
                 }
             });
 
-            // FILTRO ESTRITO: EXIBE APENAS VENDEDORES COM VOLUME TOTAL MAIOR QUE R$ 0,00
+            // EXIBE APENAS OS VENDEDORES QUE TÊM MAIS DE R$ 0 NO TOTAL
             const vendedoresComValores = Object.keys(vendEfetivoMap)
                 .filter(v => vendEfetivoMap[v].totalVal > 0)
                 .sort((a,b) => vendEfetivoMap[b].totalVal - vendEfetivoMap[a].totalVal);
