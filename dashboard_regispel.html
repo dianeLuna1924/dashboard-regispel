@@ -171,7 +171,7 @@
         </div>
     </div>
 
-    <!-- Tabela de Detalhamento (Fim da Página) -->
+    <!-- Tabela de Detalhamento -->
     <div class="card-dash p-5 mb-6">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-base font-bold text-slate-800">
@@ -306,7 +306,7 @@
                     else valR = valQ;
                 }
 
-                // LEITURA RIGOROSA DO STATUS PELA COLUNA S (r[18]) E MOTIVO PERDA U (r[20])
+                // LEITURA DO STATUS (Coluna S)
                 let statusBruto = (r[18] || "").toString().trim();
                 let motivoPerda = (r[20] || "").toString().trim();
 
@@ -314,14 +314,17 @@
                 let motivoLimpo = motivoPerda.toUpperCase();
 
                 let statusClassificado = "Em Negociação";
+                let temStatusDefinido = false; // Marcador para saber se foi realmente preenchido
 
                 if (statusLimpo.includes("PERDID") || statusLimpo.includes("CANCELAD") || statusLimpo.includes("NÃO FECHAD") || statusLimpo.includes("NAO FECHAD") || motivoLimpo !== "") {
                     statusClassificado = "Perdido/Cancelado";
+                    temStatusDefinido = true;
                 } else if (statusLimpo === "APROVADO" || statusLimpo === "APROVADA") {
-                    // REGRA ESTRITA: APENAS SE A COLUNA S FOR "APROVADO" OU "APROVADA"
                     statusClassificado = "Aprovado";
+                    temStatusDefinido = true;
                 } else if (statusBruto !== "" && statusBruto !== "0" && !statusLimpo.includes("SEM RESPOSTA")) {
                     statusClassificado = statusBruto;
+                    temStatusDefinido = true;
                 }
 
                 let dataFormatada = "";
@@ -357,7 +360,8 @@
                     qtd: converterValor(r[7]),
                     totalEfetivo: valQ,
                     valorColunaR: valR,
-                    status: statusClassificado
+                    status: statusClassificado,
+                    temStatusDefinido: temStatusDefinido
                 });
             }
 
@@ -509,10 +513,10 @@
                 options: { responsive: true, maintainAspectRatio: false }
             });
 
-            // 2. Ticket Médio e Qtd por Vendedor (APENAS VENDEDORES COM DADOS)
+            // 2. Ticket Médio e Qtd por Vendedor (APENAS COM STATUS DEFINIDO)
             const vendSummary = {};
             dados.forEach(d => {
-                if (d.vendedor) {
+                if (d.vendedor && d.temStatusDefinido) {
                     if (!vendSummary[d.vendedor]) {
                         vendSummary[d.vendedor] = { qtd: 0, ticketMedio: 0 };
                     }
@@ -522,7 +526,6 @@
             });
 
             const vendedoresComTicket = Object.keys(vendSummary)
-                .filter(v => vendSummary[v].ticketMedio > 0)
                 .sort((a,b) => vendSummary[b].ticketMedio - vendSummary[a].ticketMedio);
 
             const arrayQtd = vendedoresComTicket.map(v => vendSummary[v].qtd);
@@ -594,11 +597,12 @@
                 }
             });
 
-            // 3. Volume R$ por Vendedor (FILTRO RÍGIDO DE REMOÇÃO DE ZERADOS)
+            // 3. Volume R$ por Vendedor (APENAS VENDEDORES COM STATUS PREENCHIDO NA PLANILHA)
             const vendEfetivoMap = {};
 
             dados.forEach(d => {
-                if (d.vendedor) {
+                // FILTRO ESTRITO: Considera no gráfico APENAS itens que têm status real preenchido!
+                if (d.vendedor && d.temStatusDefinido) {
                     if (!vendEfetivoMap[d.vendedor]) {
                         vendEfetivoMap[d.vendedor] = { 
                             negociacaoVal: 0, negociacaoQtd: 0,
@@ -623,9 +627,8 @@
                 }
             });
 
-            // SÓ MANTÉM NO EIXO DO GRÁFICO SE TIVER VALOR ACUMULADO
+            // MANTÉM NO EIXO APENAS OS VENDEDORES QUE POSSUEM STATUS PREENCHIDO
             const vendedoresComValores = Object.keys(vendEfetivoMap)
-                .filter(v => vendEfetivoMap[v].totalVal > 0)
                 .sort((a,b) => vendEfetivoMap[b].totalVal - vendEfetivoMap[a].totalVal);
 
             if (chartVendedorEfetivoInstance) chartVendedorEfetivoInstance.destroy();
@@ -874,7 +877,7 @@
         </div>
     </div>
 
-    <!-- Tabela de Detalhamento (Fim da Página) -->
+    <!-- Tabela de Detalhamento -->
     <div class="card-dash p-5 mb-6">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-base font-bold text-slate-800">
@@ -1009,7 +1012,7 @@
                     else valR = valQ;
                 }
 
-                // LEITURA RIGOROSA DO STATUS PELA COLUNA S (r[18]) E MOTIVO PERDA U (r[20])
+                // LEITURA DO STATUS (Coluna S)
                 let statusBruto = (r[18] || "").toString().trim();
                 let motivoPerda = (r[20] || "").toString().trim();
 
@@ -1017,14 +1020,17 @@
                 let motivoLimpo = motivoPerda.toUpperCase();
 
                 let statusClassificado = "Em Negociação";
+                let temStatusDefinido = false; // Marcador para saber se foi realmente preenchido
 
                 if (statusLimpo.includes("PERDID") || statusLimpo.includes("CANCELAD") || statusLimpo.includes("NÃO FECHAD") || statusLimpo.includes("NAO FECHAD") || motivoLimpo !== "") {
                     statusClassificado = "Perdido/Cancelado";
+                    temStatusDefinido = true;
                 } else if (statusLimpo === "APROVADO" || statusLimpo === "APROVADA") {
-                    // REGRA ESTRITA: APENAS SE A COLUNA S FOR "APROVADO" OU "APROVADA"
                     statusClassificado = "Aprovado";
+                    temStatusDefinido = true;
                 } else if (statusBruto !== "" && statusBruto !== "0" && !statusLimpo.includes("SEM RESPOSTA")) {
                     statusClassificado = statusBruto;
+                    temStatusDefinido = true;
                 }
 
                 let dataFormatada = "";
@@ -1060,7 +1066,8 @@
                     qtd: converterValor(r[7]),
                     totalEfetivo: valQ,
                     valorColunaR: valR,
-                    status: statusClassificado
+                    status: statusClassificado,
+                    temStatusDefinido: temStatusDefinido
                 });
             }
 
@@ -1212,10 +1219,10 @@
                 options: { responsive: true, maintainAspectRatio: false }
             });
 
-            // 2. Ticket Médio e Qtd por Vendedor (APENAS VENDEDORES COM DADOS)
+            // 2. Ticket Médio e Qtd por Vendedor (APENAS COM STATUS DEFINIDO)
             const vendSummary = {};
             dados.forEach(d => {
-                if (d.vendedor) {
+                if (d.vendedor && d.temStatusDefinido) {
                     if (!vendSummary[d.vendedor]) {
                         vendSummary[d.vendedor] = { qtd: 0, ticketMedio: 0 };
                     }
@@ -1225,7 +1232,6 @@
             });
 
             const vendedoresComTicket = Object.keys(vendSummary)
-                .filter(v => vendSummary[v].ticketMedio > 0)
                 .sort((a,b) => vendSummary[b].ticketMedio - vendSummary[a].ticketMedio);
 
             const arrayQtd = vendedoresComTicket.map(v => vendSummary[v].qtd);
@@ -1297,11 +1303,12 @@
                 }
             });
 
-            // 3. Volume R$ por Vendedor (FILTRO RÍGIDO DE REMOÇÃO DE ZERADOS)
+            // 3. Volume R$ por Vendedor (APENAS VENDEDORES COM STATUS PREENCHIDO NA PLANILHA)
             const vendEfetivoMap = {};
 
             dados.forEach(d => {
-                if (d.vendedor) {
+                // FILTRO ESTRITO: Considera no gráfico APENAS itens que têm status real preenchido!
+                if (d.vendedor && d.temStatusDefinido) {
                     if (!vendEfetivoMap[d.vendedor]) {
                         vendEfetivoMap[d.vendedor] = { 
                             negociacaoVal: 0, negociacaoQtd: 0,
@@ -1326,9 +1333,8 @@
                 }
             });
 
-            // SÓ MANTÉM NO EIXO DO GRÁFICO SE TIVER VALOR ACUMULADO
+            // MANTÉM NO EIXO APENAS OS VENDEDORES QUE POSSUEM STATUS PREENCHIDO
             const vendedoresComValores = Object.keys(vendEfetivoMap)
-                .filter(v => vendEfetivoMap[v].totalVal > 0)
                 .sort((a,b) => vendEfetivoMap[b].totalVal - vendEfetivoMap[a].totalVal);
 
             if (chartVendedorEfetivoInstance) chartVendedorEfetivoInstance.destroy();
