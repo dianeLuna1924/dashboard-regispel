@@ -45,7 +45,7 @@
 
     <!-- Status de Carregamento Automático -->
     <div id="statusCarregamento" class="mb-6 p-4 bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm">
-        <i class="fa-solid fa-circle-notch fa-spin text-base text-blue-600"></i>
+        <i id="iconeStatus" class="fa-solid fa-circle-notch fa-spin text-base text-blue-600"></i>
         <span id="textoStatus">A carregar dados da planilha do servidor...</span>
     </div>
 
@@ -99,7 +99,7 @@
         </div>
     </div>
 
-    <!-- CARDS DE MÉTRICAS INDIVIDUAIS (SEM SUBTÍTULOS DE COLUNA) -->
+    <!-- CARDS DE MÉTRICAS INDIVIDUAIS -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         
         <!-- CARD 1: TICKET MÉDIO GERAL -->
@@ -210,13 +210,13 @@
         <div class="card-dash p-5">
             <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
                 <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-sack-dollar text-emerald-600"></i> Volume R$ por Vendedor</h3>
-                <span class="text-[10px] bg-emerald-50 text-emerald-600 font-semibold px-2 py-0.5 rounded">Todos os Vendedores</span>
+                <span class="text-[10px] bg-amber-50 text-amber-600 font-semibold px-2 py-0.5 rounded">Apenas Status Preenchidos</span>
             </div>
             <div class="h-[280px]"><canvas id="chartVendedorEfetivo"></canvas></div>
         </div>
     </div>
 
-    <!-- TABELA MENOR COM ROLAGEM INTERNA E CABEÇALHO FIXO -->
+    <!-- TABELA -->
     <div class="card-dash p-5 mb-8">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 pb-3 border-b border-slate-100 gap-2">
             <div>
@@ -269,38 +269,46 @@
             const textoStatus = document.getElementById('textoStatus');
             statusDiv.classList.remove('hidden');
 
-            // URL DIRETA DO REPOSITÓRIO PÚBLICO
-            const urlBase = 'https://dianeluna1924.github.io/dashboard-regispel/Base_Orcamentos.xlsx';
+            const rotasTentativa = [
+                'Base_Orcamentos.xlsx',
+                './Base_Orcamentos.xlsx',
+                'https://dianeluna1924.github.io/dashboard-regispel/Base_Orcamentos.xlsx'
+            ];
 
-            try {
-                textoStatus.innerText = `A conectar com o servidor GitHub...`;
-                const response = await fetch(urlBase + '?v=' + new Date().getTime());
-                
-                if (response.ok) {
-                    const buffer = await response.arrayBuffer();
-                    const data = new Uint8Array(buffer);
-                    const workbook = XLSX.read(data, { type: 'array' });
+            let carregadoComSucesso = false;
+
+            for (const path of rotasTentativa) {
+                try {
+                    textoStatus.innerText = `A conectar planilha (${path})...`;
+                    const response = await fetch(path + '?v=' + new Date().getTime());
                     
-                    let sheetName = "Base_Orcamentos";
-                    if (!workbook.SheetNames.includes(sheetName)) {
-                        sheetName = workbook.SheetNames[0];
+                    if (response.ok) {
+                        const buffer = await response.arrayBuffer();
+                        const data = new Uint8Array(buffer);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        
+                        let sheetName = "Base_Orcamentos";
+                        if (!workbook.SheetNames.includes(sheetName)) sheetName = workbook.SheetNames[0];
+
+                        const worksheet = workbook.Sheets[sheetName];
+                        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+                        
+                        processarDadosBase(json);
+                        
+                        statusDiv.className = "mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm";
+                        statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>Planilha Base_Orcamentos.xlsx sincronizada com sucesso!</span>`;
+                        carregadoComSucesso = true;
+                        setTimeout(() => statusDiv.classList.add('hidden'), 3500);
+                        break;
                     }
-
-                    const worksheet = workbook.Sheets[sheetName];
-                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
-                    
-                    processarDadosBase(json);
-                    
-                    statusDiv.className = "mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm";
-                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>Planilha Base_Orcamentos.xlsx sincronizada com sucesso!</span>`;
-                    setTimeout(() => statusDiv.classList.add('hidden'), 3500);
-                } else {
-                    throw new Error("Não foi possível carregar a planilha automaticamente.");
+                } catch (err) {
+                    console.log(`Tentativa com ${path} falhou:`, err);
                 }
-            } catch (err) {
-                console.log('Aviso de carregamento automático:', err);
+            }
+
+            if (!carregadoComSucesso) {
                 statusDiv.className = "mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm";
-                statusDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-600 text-base"></i><span>Para carregar os dados agora, clique no botão verde <strong>"Carregar Planilha Local"</strong> no canto superior direito e selecione a planilha do computador.</span>`;
+                statusDiv.innerHTML = `<i class="fa-solid fa-circle-info text-amber-600 text-base"></i><span>Para carregar os dados agora, clique no botão verde <strong>"Carregar Planilha Local"</strong> no topo superior direito e selecione a planilha do seu computador.</span>`;
             }
         }
 
@@ -376,15 +384,20 @@
                 let motivoLimpo = motivoPerda.toUpperCase();
 
                 let statusClassificado = "Aguardando Retorno";
+                let temStatusDefinido = false;
 
                 if (statusLimpo.includes("PERDID") || statusLimpo.includes("CANCELAD") || statusLimpo.includes("NÃO FECHAD") || statusLimpo.includes("NAO FECHAD") || motivoLimpo !== "") {
                     statusClassificado = "Perdido/Cancelado";
+                    temStatusDefinido = true;
                 } else if (statusLimpo === "APROVADO" || statusLimpo === "APROVADA") {
                     statusClassificado = "Aprovado";
+                    temStatusDefinido = true;
                 } else if (statusLimpo.includes("EM NEGOCIAÇÃO") || statusLimpo.includes("EM NEGOCIACAO") || statusLimpo.includes("NEGOCIAÇÃO") || statusLimpo.includes("NEGOCIACAO")) {
                     statusClassificado = "Em Negociação";
+                    temStatusDefinido = true;
                 } else if (statusBruto !== "" && statusBruto !== "0") {
                     statusClassificado = statusBruto;
+                    temStatusDefinido = true;
                 }
 
                 let dataFormatada = "";
@@ -420,7 +433,8 @@
                     qtd: converterValor(r[7]),
                     totalEfetivo: valQ,
                     valorColunaR: valR,
-                    status: statusClassificado
+                    status: statusClassificado,
+                    temStatusDefinido: temStatusDefinido
                 });
             }
 
@@ -551,6 +565,7 @@
         }
 
         function renderizarGraficos(dados) {
+            // 1. Status
             const statusCounts = {};
             dados.forEach(d => { statusCounts[d.status] = (statusCounts[d.status] || 0) + 1; });
 
@@ -575,6 +590,7 @@
                 }
             });
 
+            // 2. Ticket Médio e Qtd por Vendedor (Todos os Vendedores)
             const vendSummary = {};
             dados.forEach(d => {
                 if (d.vendedor) {
@@ -633,13 +649,13 @@
                 }
             });
 
+            // 3. Volume R$ por Vendedor (APENAS VENDEDORES COM STATUS PREENCHIDOS/DEFINIDOS)
             const vendEfetivoMap = {};
 
             dados.forEach(d => {
-                if (d.vendedor) {
+                if (d.vendedor && d.temStatusDefinido) {
                     if (!vendEfetivoMap[d.vendedor]) {
                         vendEfetivoMap[d.vendedor] = { 
-                            aguardandoVal: 0,
                             negociacaoVal: 0,
                             aprovadoVal: 0,
                             perdidoVal: 0,
@@ -652,8 +668,6 @@
                         vendEfetivoMap[d.vendedor].aprovadoVal += d.totalEfetivo;
                     } else if (d.status === "Em Negociação") {
                         vendEfetivoMap[d.vendedor].negociacaoVal += d.totalEfetivo;
-                    } else {
-                        vendEfetivoMap[d.vendedor].aguardandoVal += d.totalEfetivo;
                     }
                     vendEfetivoMap[d.vendedor].valTotalQ += d.totalEfetivo;
                 }
@@ -668,7 +682,6 @@
                 data: {
                     labels: vendedoresComValores,
                     datasets: [
-                        { label: 'Aguardando Retorno', data: vendedoresComValores.map(v => vendEfetivoMap[v].aguardandoVal), backgroundColor: '#38bdf8', borderRadius: 4 },
                         { label: 'Em Negociação', data: vendedoresComValores.map(v => vendEfetivoMap[v].negociacaoVal), backgroundColor: '#f59e0b', borderRadius: 4 },
                         { label: 'Aprovado', data: vendedoresComValores.map(v => vendEfetivoMap[v].aprovadoVal), backgroundColor: '#10b981', borderRadius: 4 },
                         { label: 'Perdido/Cancelado', data: vendedoresComValores.map(v => vendEfetivoMap[v].perdidoVal), backgroundColor: '#ef4444', borderRadius: 4 }
