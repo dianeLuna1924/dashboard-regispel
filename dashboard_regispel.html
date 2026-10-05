@@ -44,9 +44,9 @@
     </header>
 
     <!-- Status de Carregamento -->
-    <div id="statusCarregamento" class="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm">
-        <i class="fa-solid fa-circle-info text-amber-600 text-base"></i>
-        <span>Clique no botão verde <strong>"Carregar Planilha Local"</strong> no canto superior direito para selecionar o ficheiro do seu computador.</span>
+    <div id="statusCarregamento" class="mb-6 p-4 bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm">
+        <i class="fa-solid fa-circle-info text-blue-600 text-base"></i>
+        <span>Aguardando seleção de planilha. Clique no botão verde <strong>"Carregar Planilha Local"</strong> para iniciar.</span>
     </div>
 
     <!-- Filtros Superiores -->
@@ -212,3 +212,246 @@
                 <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-chart-column text-indigo-600"></i> Ticket Médio por Vendedor</h3>
                 <span class="text-[10px] bg-indigo-50 text-indigo-600 font-semibold px-2 py-0.5 rounded">Todos os Vendedores</span>
             </div>
+            <div class="h-[260px]"><canvas id="chartQtdVendedor"></canvas></div>
+        </div>
+        
+        <div class="card-dash p-5">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-sack-dollar text-emerald-600"></i> Volume R$ por Vendedor</h3>
+                <span class="text-[10px] bg-amber-50 text-amber-600 font-semibold px-2 py-0.5 rounded">Status Preenchidos</span>
+            </div>
+            <div class="h-[260px]"><canvas id="chartVendedorEfetivo"></canvas></div>
+        </div>
+    </div>
+
+    <!-- TABELA -->
+    <div class="card-dash p-5 mb-8">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 pb-3 border-b border-slate-100 gap-2">
+            <div>
+                <h3 class="text-base font-black text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-blue-600"></i>
+                    Detalhamento dos Orçamentos (<span id="countTabela" class="text-blue-600">0</span>)
+                </h3>
+                <p class="text-xs text-slate-400 font-medium mt-0.5">Role na caixa abaixo para visualizar todos os registros</p>
+            </div>
+            <span class="text-xs bg-slate-100 text-slate-600 font-semibold px-3 py-1 rounded-lg">Atualizado dinamicamente</span>
+        </div>
+        
+        <div class="table-scroll-container rounded-xl border border-slate-200">
+            <table class="w-full text-left text-sm text-slate-700">
+                <thead class="bg-slate-800 text-white text-[11px] font-bold uppercase tracking-wider">
+                    <tr>
+                        <th class="p-3">Nº ORC</th>
+                        <th class="p-3">Data</th>
+                        <th class="p-3">Cliente</th>
+                        <th class="p-3 text-center">UF</th>
+                        <th class="p-3">Vendedor</th>
+                        <th class="p-3">Produto / Descrição</th>
+                        <th class="p-3">Papel</th>
+                        <th class="p-3 text-right">Qtd</th>
+                        <th class="p-3 text-right">Valor Total Efetivo</th>
+                        <th class="p-3 text-center">Status</th>
+                        <th class="p-3">Motivo de Perda</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoTabela" class="divide-y divide-slate-200/60 font-medium">
+                    <tr>
+                        <td colspan="11" class="p-8 text-center text-slate-400 font-medium">Nenhum dado carregado. Importe a planilha no topo.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let dadosGlobais = [];
+        let chartStatusInstance = null;
+        let chartMotivosPerdaInstance = null;
+        let chartQtdVendedorInstance = null;
+        let chartVendedorEfetivoInstance = null;
+
+        // LEITURA DIRETA DO ARQUIVO SELECIONADO
+        document.getElementById('inputExcel').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    let sheetName = "Base_Orcamentos";
+                    if (!workbook.SheetNames.includes(sheetName)) sheetName = workbook.SheetNames[0];
+
+                    const worksheet = workbook.Sheets[sheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+
+                    processarDadosBase(json);
+
+                    const statusDiv = document.getElementById('statusCarregamento');
+                    statusDiv.className = "mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm";
+                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>Planilha (${file.name}) carregada com sucesso!</span>`;
+                    setTimeout(() => statusDiv.classList.add('hidden'), 3500);
+                } catch (err) {
+                    console.error("Erro na leitura:", err);
+                    alert("Não foi possível ler o arquivo. Certifique-se de selecionar a planilha do Excel.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function converterValor(val) {
+            if (val === undefined || val === null || val === "" || val === "-") return 0;
+            if (typeof val === 'number') return val;
+            
+            let str = val.toString().replace("R$", "").replace(/\s/g, "").trim();
+            if (!str) return 0;
+
+            if (str.includes(",")) {
+                str = str.replace(/\./g, "").replace(",", ".");
+            }
+            return parseFloat(str) || 0;
+        }
+
+        function processarDadosBase(linhas) {
+            dadosGlobais = [];
+
+            for (let i = 2; i < linhas.length; i++) {
+                const r = linhas[i];
+                if (!r || r.length < 3) continue;
+
+                const numOrc = (r[0] || "").toString().trim();
+                if (!numOrc) continue;
+
+                let valQ = converterValor(r[16]);
+                let valR = converterValor(r[17]);
+
+                const t1 = converterValor(r[9]);
+                const t2 = converterValor(r[12]);
+                const t3 = converterValor(r[15]);
+
+                if (valR === 0) {
+                    let somaT = 0, countT = 0;
+                    if (t1 > 0) { somaT += t1; countT++; }
+                    if (t2 > 0) { somaT += t2; countT++; }
+                    if (t3 > 0) { somaT += t3; countT++; }
+                    if (countT > 0) valR = somaT / countT;
+                    else valR = valQ;
+                }
+
+                let statusBruto = (r[18] || "").toString().trim();
+                let motivoPerda = (r[20] || "").toString().trim();
+
+                let statusLimpo = statusBruto.toUpperCase();
+                let motivoLimpo = motivoPerda.toUpperCase();
+
+                let statusClassificado = "Aguardando Retorno";
+                let temStatusDefinido = false;
+
+                if (statusLimpo.includes("PERDID") || statusLimpo.includes("CANCELAD") || statusLimpo.includes("NÃO FECHAD") || statusLimpo.includes("NAO FECHAD") || motivoLimpo !== "") {
+                    statusClassificado = "Perdido/Cancelado";
+                    temStatusDefinido = true;
+                } else if (statusLimpo === "APROVADO" || statusLimpo === "APROVADA") {
+                    statusClassificado = "Aprovado";
+                    temStatusDefinido = true;
+                } else if (statusLimpo.includes("EM NEGOCIAÇÃO") || statusLimpo.includes("EM NEGOCIACAO") || statusLimpo.includes("NEGOCIAÇÃO") || statusLimpo.includes("NEGOCIACAO")) {
+                    statusClassificado = "Em Negociação";
+                    temStatusDefinido = true;
+                } else if (statusBruto !== "" && statusBruto !== "0") {
+                    statusClassificado = statusBruto;
+                    temStatusDefinido = true;
+                }
+
+                let dataFormatada = "";
+                let ano = null;
+                let mes = null;
+
+                if (r[1]) {
+                    if (typeof r[1] === 'number') {
+                        const dateObj = XLSX.SSF.parse_date_code(r[1]);
+                        ano = dateObj.y;
+                        mes = dateObj.m;
+                        dataFormatada = `${String(dateObj.d).padStart(2,'0')}/${String(dateObj.m).padStart(2,'0')}/${dateObj.y}`;
+                    } else {
+                        dataFormatada = r[1].toString().substring(0, 10);
+                        const parts = dataFormatada.split('/');
+                        if (parts.length === 3) {
+                            ano = parseInt(parts[2]);
+                            mes = parseInt(parts[1]);
+                        }
+                    }
+                }
+
+                dadosGlobais.push({
+                    numOrc: numOrc,
+                    data: dataFormatada,
+                    ano: ano,
+                    mes: mes,
+                    cliente: (r[2] || "NÃO INFORMADO").toString().trim(),
+                    uf: (r[3] || "SP").toString().trim(),
+                    vendedor: (r[4] || "NÃO INFORMADO").toString().trim(),
+                    descricao: (r[5] || "").toString().trim(),
+                    papel: (r[6] || "").toString().trim(),
+                    qtd: converterValor(r[7]),
+                    totalEfetivo: valQ,
+                    valorColunaR: valR,
+                    status: statusClassificado,
+                    motivoPerda: motivoPerda || (statusClassificado === "Perdido/Cancelado" ? "Não Especificado" : "-"),
+                    temStatusDefinido: temStatusDefinido
+                });
+            }
+
+            popularFiltros();
+            atualizarDashboard();
+        }
+
+        function popularFiltros() {
+            const vendedores = [...new Set(dadosGlobais.map(d => d.vendedor))].filter(Boolean).sort();
+            const statusList = [...new Set(dadosGlobais.map(d => d.status))].filter(Boolean).sort();
+            const ufs = [...new Set(dadosGlobais.map(d => d.uf))].filter(Boolean).sort();
+            const motivos = [...new Set(dadosGlobais.map(d => d.motivoPerda))].filter(m => m && m !== "-").sort();
+            const anos = [...new Set(dadosGlobais.map(d => d.ano))].filter(Boolean).sort((a,b) => b - a);
+
+            preencherSelect('filtroVendedor', vendedores, 'Todos os Vendedores');
+            preencherSelect('filtroStatus', statusList, 'Todos os Status');
+            preencherSelect('filtroUF', ufs, 'Todas as UFs');
+            preencherSelect('filtroMotivo', motivos, 'Todos os Motivos');
+            
+            const selectAno = document.getElementById('filtroAno');
+            selectAno.innerHTML = `<option value="">Todos os Anos</option>`;
+            anos.forEach(a => { selectAno.innerHTML += `<option value="${a}">${a}</option>`; });
+
+            if (anos.includes(2026)) selectAno.value = "2026";
+        }
+
+        function preencherSelect(id, lista, textoPadrao) {
+            const select = document.getElementById(id);
+            select.innerHTML = `<option value="">${textoPadrao}</option>`;
+            lista.forEach(item => { select.innerHTML += `<option value="${item}">${item}</option>`; });         }          function atualizarDashboard() {             const anoFilter = document.getElementById('filtroAno').value;             const mesFilter = document.getElementById('filtroMes').value;             const vendFilter = document.getElementById('filtroVendedor').value;             const statusFilter = document.getElementById('filtroStatus').value;             const ufFilter = document.getElementById('filtroUF').value;             const motivoFilter = document.getElementById('filtroMotivo').value;             const buscaFilter = document.getElementById('filtroBusca').value.toLowerCase();              const filtrados = dadosGlobais.filter(d => {                 const matchAno = !anoFilter \vert{}\vert{} (d.ano && d.ano.toString() === anoFilter);                 const matchMes = !mesFilter \vert{}\vert{} (d.mes && d.mes.toString() === mesFilter);                 const matchVend = !vendFilter \vert{}\vert{} d.vendedor === vendFilter;                 const matchStatus = !statusFilter \vert{}\vert{} d.status === statusFilter;                 const matchUF = !ufFilter \vert{}\vert{} d.uf === ufFilter;                 const matchMotivo = !motivoFilter \vert{}\vert{} d.motivoPerda === motivoFilter;                 const matchBusca = !buscaFilter \vert{}\vert{} d.cliente.toLowerCase().includes(buscaFilter) \vert{}\vert{} d.numOrc.toLowerCase().includes(buscaFilter);                  return matchAno && matchMes && matchVend && matchStatus && matchUF && matchMotivo && matchBusca;             });              let totalItens = filtrados.length;             let valorAprovadoEfetivo = 0;             let valorNegociacao = 0;             let valorPerdidoCancelado = 0;             let somaColunaR = 0;             let somaTotalColunaQ = 0;              let cntAprov = 0;             let cntNegoc = 0;             let cntPerd = 0;              filtrados.forEach(d => {                 somaColunaR += d.valorColunaR;                 somaTotalColunaQ += d.totalEfetivo;                  if (d.status === "Aprovado") {                     valorAprovadoEfetivo += d.totalEfetivo;                     cntAprov++;                 } else if (d.status === "Perdido/Cancelado") {                     valorPerdidoCancelado += d.totalEfetivo;                     cntPerd++;                 } else if (d.status === "Em Negociação") {                     valorNegociacao += d.totalEfetivo;                     cntNegoc++;                 }             });              const taxaConversao = totalItens > 0 ? ((cntAprov / totalItens) * 100).toFixed(1) : 0;              document.getElementById('kpiSomaTotalGeral').innerText = fmtMoeda(somaTotalColunaQ);             document.getElementById('subTotalNegociacao').innerText = fmtMoeda(valorNegociacao);             document.getElementById('subTotalAprovadoEfetivo').innerText = fmtMoeda(valorAprovadoEfetivo);             document.getElementById('subTotalPerdido').innerText = fmtMoeda(valorPerdidoCancelado);             document.getElementById('kpiTicketMedio').innerText = fmtMoeda(somaColunaR);              document.getElementById('kpiItens').innerText = totalItens;             document.getElementById('cntNegociacao').innerText = `${cntNegoc} em negociação`;
+            document.getElementById('cntAprovado').innerText = `${cntAprov} de ${totalItens}`;             document.getElementById('cntPerdido').innerText = `${cntPerd} cancelados`;
+            document.getElementById('kpiConversao').innerText = taxaConversao + '%';
+
+            renderizarGraficos(filtrados);
+            renderizarTabela(filtrados);
+        }
+
+        function renderizarTabela(dados) {
+            const corpo = document.getElementById('corpoTabela');
+            document.getElementById('countTabela').innerText = dados.length;
+
+            if (dados.length === 0) {
+                corpo.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            dados.forEach(d => {
+                let badgeCor = "bg-slate-100 text-slate-700 border border-slate-300";
+                if (d.status === "Aprovado") badgeCor = "bg-emerald-100 text-emerald-800 border border-emerald-300";
+                else if (d.status === "Perdido/Cancelado") badgeCor = "bg-rose-100 text-rose-800 border border-rose-300";
+                else if (d.status === "Em Negociação") badgeCor = "bg-amber-100 text-amber-800 border border-amber-300";
+                else if (d.status === "Aguardando Retorno") badgeCor = "bg-sky-100 text-sky-800 border border-sky-300";
+
+                html += `
+                    <tr class="hover:bg-slate-100/
