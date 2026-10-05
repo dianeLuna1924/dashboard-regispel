@@ -9,51 +9,56 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #f8fafc; color: #0f172a; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; overflow-x: hidden; }
-        .card-dash { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.04); }
-        .card-destaque { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.2); }
-        /* Tabela com Rolagem Interna e Cabeçalho Fixo */
-        .table-scroll { max-height: 260px; overflow-y: auto; }
-        .table-scroll thead th { position: sticky; top: 0; z-index: 10; background-color: #f8fafc; }
+        body { background-color: #f1f5f9; color: #0f172a; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        .card-dash { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 16px; box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.05); transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .card-dash:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -3px rgba(15, 23, 42, 0.08); }
+        .card-kpi-amber { background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%); border-left: 5px solid #f59e0b; }
+        .card-kpi-emerald { background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%); border-left: 5px solid #10b981; }
+        .card-kpi-rose { background: linear-gradient(135deg, #ffffff 0%, #fff1f2 100%); border-left: 5px solid #ef4444; }
+        .card-kpi-blue { background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%); border-left: 5px solid #3b82f6; }
+        .card-kpi-indigo { background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%); border-left: 5px solid #6366f1; }
     </style>
 </head>
-<body class="p-3 md:p-5 max-w-[1600px] mx-auto">
+<body class="p-4 md:p-8 max-w-[1600px] mx-auto">
 
-    <!-- Header Principal Compacto -->
-    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 pb-2 border-b border-slate-200 gap-2">
-        <div class="flex items-center gap-2">
-            <span class="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">REGISPEL</span>
-            <h1 class="text-lg md:text-xl font-black text-slate-900 tracking-tight">Controle de Orçamentos</h1>
+    <!-- Header Principal -->
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-slate-300 gap-4">
+        <div>
+            <div class="flex items-center gap-3">
+                <span class="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider shadow-sm">REGISPEL</span>
+                <h1 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Painel Comercial de Orçamentos</h1>
+            </div>
+            <p class="text-slate-500 text-sm mt-1 font-medium">Análise e Acompanhamento de Vendas (Base: BASE_ORCAMENTOS)</p>
         </div>
-        <div class="flex gap-2">
-            <label class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs px-3 py-1.5 rounded-lg cursor-pointer flex items-center gap-1.5 transition shadow-sm">
-                <i class="fa-solid fa-file-excel"></i> Carregar Planilha
+        <div class="flex flex-wrap gap-3">
+            <label class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm px-4 py-2.5 rounded-xl cursor-pointer flex items-center gap-2 transition shadow-md">
+                <i class="fa-solid fa-file-excel"></i> Carregar Planilha Local
                 <input type="file" id="inputExcel" accept=".xlsx, .xls, .xlsm" class="hidden">
             </label>
-            <button id="btnLimpar" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-sm">
-                <i class="fa-solid fa-arrows-rotate mr-1 text-slate-400"></i> Limpar
+            <button id="btnLimpar" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-semibold text-sm px-4 py-2.5 rounded-xl transition shadow-sm">
+                <i class="fa-solid fa-arrows-rotate mr-1.5 text-slate-400"></i> Limpar Filtros
             </button>
         </div>
     </header>
 
-    <!-- Status de Carregamento -->
-    <div id="statusCarregamento" class="hidden mb-2 p-2 bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold rounded-lg flex items-center gap-2">
-        <i class="fa-solid fa-circle-notch fa-spin text-blue-600"></i>
-        <span>Sincronizando dados com a planilha...</span>
+    <!-- Status de Carregamento Automático -->
+    <div id="statusCarregamento" class="hidden mb-6 p-4 bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm">
+        <i class="fa-solid fa-circle-notch fa-spin text-base text-blue-600"></i>
+        <span>Sincronizando dados com a planilha do servidor...</span>
     </div>
 
-    <!-- Filtros Superiores Compactos -->
-    <div class="card-dash p-2.5 mb-3 grid grid-cols-2 md:grid-cols-6 gap-2">
+    <!-- Filtros Superiores Limpos -->
+    <div class="card-dash p-4 mb-6 grid grid-cols-2 md:grid-cols-6 gap-3">
         <div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase">Ano</label>
-            <select id="filtroAno" class="w-full mt-0.5 bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs text-slate-800 font-medium focus:outline-none">
-                <option value="">Todos</option>
+            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Ano</label>
+            <select id="filtroAno" class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="">Todos os Anos</option>
             </select>
         </div>
         <div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase">Mês</label>
-            <select id="filtroMes" class="w-full mt-0.5 bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs text-slate-800 font-medium focus:outline-none">
-                <option value="">Todos</option>
+            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Mês</label>
+            <select id="filtroMes" class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="">Todos os Meses</option>
                 <option value="1">Janeiro</option>
                 <option value="2">Fevereiro</option>
                 <option value="3">Março</option>
@@ -69,549 +74,164 @@
             </select>
         </div>
         <div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase">Vendedor</label>
-            <select id="filtroVendedor" class="w-full mt-0.5 bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs text-slate-800 font-medium focus:outline-none">
+            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Vendedor</label>
+            <select id="filtroVendedor" class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 <option value="">Todos os Vendedores</option>
             </select>
         </div>
         <div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase">Status</label>
-            <select id="filtroStatus" class="w-full mt-0.5 bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs text-slate-800 font-medium focus:outline-none">
+            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Status</label>
+            <select id="filtroStatus" class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 <option value="">Todos os Status</option>
             </select>
         </div>
         <div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase">UF</label>
-            <select id="filtroUF" class="w-full mt-0.5 bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs text-slate-800 font-medium focus:outline-none">
-                <option value="">Todas</option>
+            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">UF</label>
+            <select id="filtroUF" class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="">Todas as UFs</option>
             </select>
         </div>
         <div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase">Buscar Cliente/ORC</label>
-            <input type="text" id="filtroBusca" placeholder="Cliente ou ORC..." class="w-full mt-0.5 bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs text-slate-800 focus:outline-none">
+            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Buscar Cliente / ORC</label>
+            <input type="text" id="filtroBusca" placeholder="Cliente ou ORC..." class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
         </div>
     </div>
 
-    <!-- PAINEL CONSOLIDADO COMPACTO -->
-    <div class="card-destaque p-3.5 mb-3">
-        <div class="flex justify-between items-center border-b border-blue-400/30 pb-2 mb-2">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-200"><i class="fa-solid fa-chart-line mr-1"></i> Resumo Geral Consolidado</span>
-            <div class="flex gap-4">
-                <span class="text-xs text-blue-100">Ticket Médio (R): <strong id="kpiTicketMedio" class="text-white font-black text-sm">R$ 0,00</strong></span>
-                <span class="text-xs text-blue-100">Total Efetivo (Q): <strong id="kpiSomaTotalGeral" class="text-amber-300 font-black text-sm">R$ 0,00</strong></span>
+    <!-- CARDS DE MÉTRICAS INDIVIDUAIS E COLORIDOS -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        
+        <!-- CARD 1: VALOR TOTAL EFETIVO (SOMA COLUNA Q) -->
+        <div class="card-dash card-kpi-blue p-4">
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-blue-600 block">Valor Total Efetivo</span>
+                    <span class="text-[10px] text-slate-400 font-medium">(Soma Coluna Q)</span>
+                </div>
+                <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-base">
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+            </div>
+            <h2 id="kpiSomaTotalGeral" class="text-2xl font-black text-slate-900 mt-2">R$ 0,00</h2>
+            <div class="mt-2 pt-2 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
+                <span>Qtd de Itens:</span>
+                <span id="kpiItens" class="font-bold text-slate-800">0</span>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div class="bg-white/10 p-2 rounded-lg border border-white/10">
-                <span class="text-[10px] font-bold text-amber-300 uppercase block">Em Negociação</span>
-                <p id="subTotalNegociacao" class="text-base font-black text-white">R$ 0,00</p>
-                <span id="cntNegociacao" class="text-[10px] text-blue-200 font-medium block">0 itens</span>
+        <!-- CARD 2: EM NEGOCIAÇÃO -->
+        <div class="card-dash card-kpi-amber p-4">
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-amber-600 block">Em Negociação</span>
+                    <span class="text-[10px] text-slate-400 font-medium">(Coluna Q)</span>
+                </div>
+                <div class="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 font-bold text-base">
+                    <i class="fa-solid fa-hourglass-half"></i>
+                </div>
             </div>
-            <div class="bg-white/10 p-2 rounded-lg border border-white/10">
-                <span class="text-[10px] font-bold text-emerald-300 uppercase block">Total Aprovado</span>
-                <p id="subTotalAprovadoEfetivo" class="text-base font-black text-white">R$ 0,00</p>
-                <span id="cntAprovado" class="text-[10px] text-blue-200 font-medium block">0 aprovados</span>
-            </div>
-            <div class="bg-white/10 p-2 rounded-lg border border-white/10">
-                <span class="text-[10px] font-bold text-rose-300 uppercase block">Perdido / Cancelado</span>
-                <p id="subTotalPerdido" class="text-base font-black text-white">R$ 0,00</p>
-                <span id="cntPerdido" class="text-[10px] text-blue-200 font-medium block">0 cancelados</span>
-            </div>
-            <div class="bg-white/10 p-2 rounded-lg border border-white/10">
-                <span class="text-[10px] font-bold text-blue-200 uppercase block">Taxa Conversão</span>
-                <p id="kpiConversao" class="text-base font-black text-white">0%</p>
-                <span id="kpiItensSub" class="text-[10px] text-blue-200 font-medium block">0 itens cotados</span>
+            <h2 id="subTotalNegociacao" class="text-2xl font-black text-slate-900 mt-2">R$ 0,00</h2>
+            <div class="mt-2 pt-2 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
+                <span>Orçamentos:</span>
+                <span id="cntNegociacao" class="font-bold text-amber-600">0 itens</span>
             </div>
         </div>
+
+        <!-- CARD 3: TOTAL APROVADO -->
+        <div class="card-dash card-kpi-emerald p-4">
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-600 block">Vendas Aprovadas</span>
+                    <span class="text-[10px] text-slate-400 font-medium">(Coluna Q)</span>
+                </div>
+                <div class="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-base">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+            </div>
+            <h2 id="subTotalAprovadoEfetivo" class="text-2xl font-black text-slate-900 mt-2">R$ 0,00</h2>
+            <div class="mt-2 pt-2 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
+                <span>Concluídos:</span>
+                <span id="cntAprovado" class="font-bold text-emerald-600">0 aprovados</span>
+            </div>
+        </div>
+
+        <!-- CARD 4: CANCELADO / PERDIDO -->
+        <div class="card-dash card-kpi-rose p-4">
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-rose-600 block">Perdido / Cancelado</span>
+                    <span class="text-[10px] text-slate-400 font-medium">(Coluna Q)</span>
+                </div>
+                <div class="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 font-bold text-base">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </div>
+            </div>
+            <h2 id="subTotalPerdido" class="text-2xl font-black text-slate-900 mt-2">R$ 0,00</h2>
+            <div class="mt-2 pt-2 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
+                <span>Perdidos:</span>
+                <span id="cntPerdido" class="font-bold text-rose-600">0 cancelados</span>
+            </div>
+        </div>
+
+        <!-- CARD 5: TICKET MÉDIO GERAL -->
+        <div class="card-dash card-kpi-indigo p-4">
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-600 block">Ticket Médio Geral</span>
+                    <span class="text-[10px] text-slate-400 font-medium">(Coluna R)</span>
+                </div>
+                <div class="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-base">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+            </div>
+            <h2 id="kpiTicketMedio" class="text-2xl font-black text-slate-900 mt-2">R$ 0,00</h2>
+            <div class="mt-2 pt-2 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
+                <span>Taxa de Conversão:</span>
+                <span id="kpiConversao" class="font-bold text-indigo-600">0%</span>
+            </div>
+        </div>
+
     </div>
 
-    <!-- 3 GRÁFICOS EM LINHA (ALTURA COMPACTA 180px) -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-        <div class="card-dash p-3">
-            <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2"><i class="fa-solid fa-chart-pie text-blue-600 mr-1"></i> Distribuição Status</h3>
-            <div class="h-[180px] flex justify-center items-center"><canvas id="chartStatus"></canvas></div>
-        </div>
-        <div class="card-dash p-3">
-            <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2"><i class="fa-solid fa-chart-column text-indigo-600 mr-1"></i> Ticket Médio e Qtd</h3>
-            <div class="h-[180px]"><canvas id="chartQtdVendedor"></canvas></div>
-        </div>
-        <div class="card-dash p-3">
-            <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2"><i class="fa-solid fa-sack-dollar text-emerald-600 mr-1"></i> Volume R$ (Coluna Q)</h3>
-            <div class="h-[180px]"><canvas id="chartVendedorEfetivo"></canvas></div>
-        </div>
-    </div>
-
-    <!-- TABELA COMPACTA COM ROLAGEM INTERNA E CABEÇALHO FIXO -->
-    <div class="card-dash p-3">
-        <div class="flex justify-between items-center mb-2">
-            <h3 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <i class="fa-solid fa-list-check text-blue-600"></i>
-                Detalhamento dos Orçamentos (<span id="countTabela" class="text-blue-600">0</span>)
-            </h3>
-            <span class="text-[10px] text-slate-400">Role dentro da tabela para ver todos os registros</span>
+    <!-- GRÁFICOS IMPONENTES E BEM APRESENTADOS (ALTURA 280px) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div class="card-dash p-5">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-chart-pie text-blue-600"></i> Distribuição por Status</h3>
+                <span class="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded">Geral</span>
+            </div>
+            <div class="h-[280px] flex justify-center items-center"><canvas id="chartStatus"></canvas></div>
         </div>
         
-        <div class="table-scroll rounded-lg border border-slate-200">
-            <table class="w-full text-left text-xs text-slate-700">
-                <thead class="bg-slate-50 text-[10px] font-bold uppercase text-slate-500 border-b border-slate-200">
-                    <tr>
-                        <th class="p-2">Nº ORC</th>
-                        <th class="p-2">Data</th>
-                        <th class="p-2">Cliente</th>
-                        <th class="p-2 text-center">UF</th>
-                        <th class="p-2">Vendedor</th>
-                        <th class="p-2">Produto / Descrição</th>
-                        <th class="p-2">Papel</th>
-                        <th class="p-2 text-right">Qtd</th>
-                        <th class="p-2 text-right">Valor Total Efetivo (Q)</th>
-                        <th class="p-2 text-center">Status</th>
-                    </tr>
-                </thead>
-                <tbody id="corpoTabela" class="divide-y divide-slate-100">
-                    <tr>
-                        <td colspan="10" class="p-4 text-center text-slate-400">Nenhum dado carregado. Importe a planilha no topo.</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="card-dash p-5">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-chart-column text-indigo-600"></i> Ticket Médio e Qtd por Vendedor</h3>
+                <span class="text-[10px] bg-indigo-50 text-indigo-600 font-semibold px-2 py-0.5 rounded">Com Status</span>
+            </div>
+            <div class="h-[280px]"><canvas id="chartQtdVendedor"></canvas></div>
+        </div>
+        
+        <div class="card-dash p-5">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-sack-dollar text-emerald-600"></i> Volume R$ por Vendedor (Coluna Q)</h3>
+                <span class="text-[10px] bg-emerald-50 text-emerald-600 font-semibold px-2 py-0.5 rounded">Com Status</span>
+            </div>
+            <div class="h-[280px]"><canvas id="chartVendedorEfetivo"></canvas></div>
         </div>
     </div>
 
-    <script>
-        let dadosGlobais = [];
-        let chartStatusInstance = null;
-        let chartQtdVendedorInstance = null;
-        let chartVendedorEfetivoInstance = null;
-
-        window.addEventListener('DOMContentLoaded', () => {
-            carregarPlanilhaAutomatica();
-        });
-
-        function carregarPlanilhaAutomatica() {
-            const statusDiv = document.getElementById('statusCarregamento');
-            statusDiv.classList.remove('hidden');
-
-            const nomeArquivoGitHub = 'Base_Orcamentos.xlsx';
-
-            fetch(nomeArquivoGitHub + '?v=' + new Date().getTime())
-                .then(response => {
-                    if (!response.ok) throw new Error('Planilha padrão não encontrada.');
-                    return response.arrayBuffer();
-                })
-                .then(buffer => {
-                    const data = new Uint8Array(buffer);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    let sheetName = "Base_Orcamentos";
-                    if (!workbook.SheetNames.includes(sheetName)) sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
-                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
-                    
-                    processarDadosBase(json);
-                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-xs"></i><span class="text-emerald-800">Dados da planilha sincronizados com sucesso!</span>`;
-                    setTimeout(() => statusDiv.classList.add('hidden'), 3000);
-                })
-                .catch(err => {
-                    statusDiv.classList.add('hidden');
-                    console.log('Aviso ao carregar automaticamente:', err);
-                });
-        }
-
-        document.getElementById('inputExcel').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                const data = new Uint8Array(evt.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                
-                let sheetName = "Base_Orcamentos";
-                if (!workbook.SheetNames.includes(sheetName)) sheetName = workbook.SheetNames[0];
-
-                const worksheet = workbook.Sheets[sheetName];
-                const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
-
-                processarDadosBase(json);
-            };
-            reader.readAsArrayBuffer(file);
-        });
-
-        function converterValor(val) {
-            if (val === undefined || val === null || val === "" || val === "-") return 0;
-            if (typeof val === 'number') return val;
-            
-            let str = val.toString().replace("R$", "").replace(/\s/g, "").trim();
-            if (!str) return 0;
-
-            if (str.includes(",")) {
-                str = str.replace(/\./g, "").replace(",", ".");
-            }
-            return parseFloat(str) || 0;
-        }
-
-        function processarDadosBase(linhas) {
-            dadosGlobais = [];
-
-            for (let i = 2; i < linhas.length; i++) {
-                const r = linhas[i];
-                if (!r || r.length < 3) continue;
-
-                const numOrc = (r[0] || "").toString().trim();
-                if (!numOrc) continue;
-
-                let valQ = converterValor(r[16]); // COLUNA Q
-                let valR = converterValor(r[17]); // COLUNA R
-
-                const t1 = converterValor(r[9]);
-                const t2 = converterValor(r[12]);
-                const t3 = converterValor(r[15]);
-
-                if (valR === 0) {
-                    let somaT = 0, countT = 0;
-                    if (t1 > 0) { somaT += t1; countT++; }
-                    if (t2 > 0) { somaT += t2; countT++; }
-                    if (t3 > 0) { somaT += t3; countT++; }
-                    if (countT > 0) valR = somaT / countT;
-                    else valR = valQ;
-                }
-
-                let statusBruto = (r[18] || "").toString().trim();
-                let motivoPerda = (r[20] || "").toString().trim();
-
-                let statusLimpo = statusBruto.toUpperCase();
-                let motivoLimpo = motivoPerda.toUpperCase();
-
-                let statusClassificado = "Em Negociação";
-                let temStatusDefinido = false;
-
-                if (statusLimpo.includes("PERDID") || statusLimpo.includes("CANCELAD") || statusLimpo.includes("NÃO FECHAD") || statusLimpo.includes("NAO FECHAD") || motivoLimpo !== "") {
-                    statusClassificado = "Perdido/Cancelado";
-                    temStatusDefinido = true;
-                } else if (statusLimpo === "APROVADO" || statusLimpo === "APROVADA") {
-                    statusClassificado = "Aprovado";
-                    temStatusDefinido = true;
-                } else if (statusBruto !== "" && statusBruto !== "0" && !statusLimpo.includes("SEM RESPOSTA")) {
-                    statusClassificado = statusBruto;
-                    temStatusDefinido = true;
-                }
-
-                let dataFormatada = "";
-                let ano = null;
-                let mes = null;
-
-                if (r[1]) {
-                    if (typeof r[1] === 'number') {
-                        const dateObj = XLSX.SSF.parse_date_code(r[1]);
-                        ano = dateObj.y;
-                        mes = dateObj.m;
-                        dataFormatada = `${String(dateObj.d).padStart(2,'0')}/${String(dateObj.m).padStart(2,'0')}/${dateObj.y}`;
-                    } else {
-                        dataFormatada = r[1].toString().substring(0, 10);
-                        const parts = dataFormatada.split('/');
-                        if (parts.length === 3) {
-                            ano = parseInt(parts[2]);
-                            mes = parseInt(parts[1]);
-                        }
-                    }
-                }
-
-                dadosGlobais.push({
-                    numOrc: numOrc,
-                    data: dataFormatada,
-                    ano: ano,
-                    mes: mes,
-                    cliente: (r[2] || "NÃO INFORMADO").toString().trim(),
-                    uf: (r[3] || "SP").toString().trim(),
-                    vendedor: (r[4] || "NÃO INFORMADO").toString().trim(),
-                    descricao: (r[5] || "").toString().trim(),
-                    papel: (r[6] || "").toString().trim(),
-                    qtd: converterValor(r[7]),
-                    totalEfetivo: valQ,
-                    valorColunaR: valR,
-                    status: statusClassificado,
-                    temStatusDefinido: temStatusDefinido
-                });
-            }
-
-            popularFiltros();
-            atualizarDashboard();
-        }
-
-        function popularFiltros() {
-            const vendedores = [...new Set(dadosGlobais.map(d => d.vendedor))].filter(Boolean).sort();
-            const statusList = [...new Set(dadosGlobais.map(d => d.status))].filter(Boolean).sort();
-            const ufs = [...new Set(dadosGlobais.map(d => d.uf))].filter(Boolean).sort();
-            const anos = [...new Set(dadosGlobais.map(d => d.ano))].filter(Boolean).sort((a,b) => b - a);
-
-            preencherSelect('filtroVendedor', vendedores, 'Todos os Vendedores');
-            preencherSelect('filtroStatus', statusList, 'Todos os Status');
-            preencherSelect('filtroUF', ufs, 'Todas');
-            
-            const selectAno = document.getElementById('filtroAno');
-            selectAno.innerHTML = `<option value="">Todos</option>`;
-            anos.forEach(a => { selectAno.innerHTML += `<option value="${a}">${a}</option>`; });
-
-            if (anos.includes(2026)) selectAno.value = "2026";
-        }
-
-        function preencherSelect(id, lista, textoPadrao) {
-            const select = document.getElementById(id);
-            select.innerHTML = `<option value="">${textoPadrao}</option>`;
-            lista.forEach(item => { select.innerHTML += `<option value="${item}">${item}</option>`; });
-        }
-
-        function atualizarDashboard() {
-            const anoFilter = document.getElementById('filtroAno').value;
-            const mesFilter = document.getElementById('filtroMes').value;
-            const vendFilter = document.getElementById('filtroVendedor').value;
-            const statusFilter = document.getElementById('filtroStatus').value;
-            const ufFilter = document.getElementById('filtroUF').value;
-            const buscaFilter = document.getElementById('filtroBusca').value.toLowerCase();
-
-            const filtrados = dadosGlobais.filter(d => {
-                const matchAno = !anoFilter || (d.ano && d.ano.toString() === anoFilter);
-                const matchMes = !mesFilter || (d.mes && d.mes.toString() === mesFilter);
-                const matchVend = !vendFilter || d.vendedor === vendFilter;
-                const matchStatus = !statusFilter || d.status === statusFilter;
-                const matchUF = !ufFilter || d.uf === ufFilter;
-                const matchBusca = !buscaFilter || d.cliente.toLowerCase().includes(buscaFilter) || d.numOrc.toLowerCase().includes(buscaFilter);
-
-                return matchAno && matchMes && matchVend && matchStatus && matchUF && matchBusca;
-            });
-
-            let totalItens = filtrados.length;
-            let valorAprovadoEfetivo = 0;
-            let valorNegociacao = 0;
-            let valorPerdidoCancelado = 0;
-            let somaColunaR = 0;
-            let somaTotalColunaQ = 0;
-
-            let cntAprov = 0;
-            let cntNegoc = 0;
-            let cntPerd = 0;
-
-            filtrados.forEach(d => {
-                somaColunaR += d.valorColunaR;
-                somaTotalColunaQ += d.totalEfetivo;
-
-                if (d.status === "Aprovado") {
-                    valorAprovadoEfetivo += d.totalEfetivo;
-                    cntAprov++;
-                } else if (d.status === "Perdido/Cancelado") {
-                    valorPerdidoCancelado += d.totalEfetivo;
-                    cntPerd++;
-                } else {
-                    valorNegociacao += d.totalEfetivo;
-                    cntNegoc++;
-                }
-            });
-
-            const taxaConversao = totalItens > 0 ? ((cntAprov / totalItens) * 100).toFixed(1) : 0;
-
-            document.getElementById('kpiTicketMedio').innerText = fmtMoeda(somaColunaR);
-            document.getElementById('kpiSomaTotalGeral').innerText = fmtMoeda(somaTotalColunaQ);
-            document.getElementById('subTotalNegociacao').innerText = fmtMoeda(valorNegociacao);
-            document.getElementById('subTotalAprovadoEfetivo').innerText = fmtMoeda(valorAprovadoEfetivo);
-            document.getElementById('subTotalPerdido').innerText = fmtMoeda(valorPerdidoCancelado);
-            document.getElementById('kpiConversao').innerText = taxaConversao + '%';
-
-            document.getElementById('cntNegociacao').innerText = `${cntNegoc} itens`;
-            document.getElementById('cntAprovado').innerText = `${cntAprov} aprovados`;
-            document.getElementById('cntPerdido').innerText = `${cntPerd} cancelados`;
-            document.getElementById('kpiItensSub').innerText = `${totalItens} itens cotados`;
-
-            renderizarGraficos(filtrados);
-            renderizarTabela(filtrados);
-        }
-
-        function renderizarTabela(dados) {
-            const corpo = document.getElementById('corpoTabela');
-            document.getElementById('countTabela').innerText = dados.length;
-
-            if (dados.length === 0) {
-                corpo.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-slate-400 font-medium">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
-                return;
-            }
-
-            let html = "";
-            dados.forEach(d => {
-                let badgeCor = "bg-amber-50 text-amber-700 border border-amber-200";
-                if (d.status === "Aprovado") badgeCor = "bg-emerald-50 text-emerald-700 border border-emerald-200";
-                else if (d.status === "Perdido/Cancelado") badgeCor = "bg-rose-50 text-rose-700 border border-rose-200";
-
-                html += `
-                    <tr class="hover:bg-slate-50 transition">
-                        <td class="p-2 font-bold text-blue-600">${d.numOrc}</td>
-                        <td class="p-2 text-slate-500 text-[11px]">${d.data}</td>
-                        <td class="p-2 font-medium text-slate-800">${d.cliente}</td>
-                        <td class="p-2 text-center"><span class="bg-slate-100 text-slate-600 font-bold px-1.5 py-0.5 rounded text-[10px]">${d.uf}</span></td>
-                        <td class="p-2 text-slate-700 font-medium">${d.vendedor}</td>
-                        <td class="p-2 text-slate-600 text-[11px] max-w-[200px] truncate">${d.descricao}</td>
-                        <td class="p-2 text-slate-500 text-[11px]">${d.papel}</td>
-                        <td class="p-2 text-right font-mono font-medium">${d.qtd.toLocaleString('pt-BR')}</td>
-                        <td class="p-2 text-right font-bold text-slate-800">${fmtMoeda(d.totalEfetivo)}</td>
-                        <td class="p-2 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeCor}">${d.status}</span></td>
-                    </tr>
-                `;
-            });
-            corpo.innerHTML = html;
-        }
-
-        function renderizarGraficos(dados) {
-            // 1. Status
-            const statusCounts = {};
-            dados.forEach(d => { statusCounts[d.status] = (statusCounts[d.status] || 0) + 1; });
-
-            if (chartStatusInstance) chartStatusInstance.destroy();
-            chartStatusInstance = new Chart(document.getElementById('chartStatus'), {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(statusCounts),
-                    datasets: [{
-                        data: Object.values(statusCounts),
-                        backgroundColor: ['#f59e0b', '#10b981', '#ef4444', '#6366f1', '#64748b'],
-                        borderWidth: 0
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } }
-                    }
-                }
-            });
-
-            // 2. Ticket Médio e Qtd por Vendedor (Apenas com Status Definido)
-            const vendSummary = {};
-            dados.forEach(d => {
-                if (d.vendedor && d.temStatusDefinido) {
-                    if (!vendSummary[d.vendedor]) {
-                        vendSummary[d.vendedor] = { qtd: 0, ticketMedio: 0 };
-                    }
-                    vendSummary[d.vendedor].qtd += 1;
-                    vendSummary[d.vendedor].ticketMedio += d.valorColunaR;
-                }
-            });
-
-            const vendedoresComTicket = Object.keys(vendSummary)
-                .sort((a,b) => vendSummary[b].ticketMedio - vendSummary[a].ticketMedio);
-
-            const arrayQtd = vendedoresComTicket.map(v => vendSummary[v].qtd);
-            const arrayTicket = vendedoresComTicket.map(v => vendSummary[v].ticketMedio);
-
-            if (chartQtdVendedorInstance) chartQtdVendedorInstance.destroy();
-            chartQtdVendedorInstance = new Chart(document.getElementById('chartQtdVendedor'), {
-                type: 'bar',
-                data: {
-                    labels: vendedoresComTicket,
-                    datasets: [
-                        {
-                            label: 'Ticket Médio (R$)',
-                            data: arrayTicket,
-                            backgroundColor: 'rgba(59, 130, 246, 0.85)',
-                            borderRadius: 4,
-                            yAxisID: 'yTicket',
-                            order: 2
-                        },
-                        {
-                            label: 'Qtd Orçamentos',
-                            data: arrayQtd,
-                            type: 'line',
-                            borderColor: '#f59e0b',
-                            backgroundColor: '#f59e0b',
-                            pointRadius: 3,
-                            fill: false,
-                            yAxisID: 'yQtd',
-                            order: 1
-                        }
-                    ]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9 } } }
-                    },
-                    scales: { 
-                        x: { ticks: { font: { size: 9 }, maxRotation: 30, minRotation: 30 } },
-                        yTicket: { position: 'left', beginAtZero: true, ticks: { font: { size: 9 }, callback: v => 'R$' + (v/1000).toFixed(0) + 'k' } },
-                        yQtd: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { font: { size: 9 } } }
-                    }
-                }
-            });
-
-            // 3. Volume R$ por Vendedor (Coluna Q - Apenas com Status Definido)
-            const vendEfetivoMap = {};
-
-            dados.forEach(d => {
-                if (d.vendedor && d.temStatusDefinido) {
-                    if (!vendEfetivoMap[d.vendedor]) {
-                        vendEfetivoMap[d.vendedor] = { 
-                            negociacaoVal: 0,
-                            aprovadoVal: 0,
-                            perdidoVal: 0,
-                            valTotalQ: 0
-                        };
-                    }
-                    if (d.status === "Perdido/Cancelado") {
-                        vendEfetivoMap[d.vendedor].perdidoVal += d.totalEfetivo;
-                        vendEfetivoMap[d.vendedor].valTotalQ += d.totalEfetivo;
-                    } else if (d.status === "Aprovado") {
-                        vendEfetivoMap[d.vendedor].aprovadoVal += d.totalEfetivo;
-                        vendEfetivoMap[d.vendedor].valTotalQ += d.totalEfetivo;
-                    } else {
-                        vendEfetivoMap[d.vendedor].negociacaoVal += d.totalEfetivo;
-                        vendEfetivoMap[d.vendedor].valTotalQ += d.totalEfetivo;
-                    }
-                }
-            });
-
-            const vendedoresComValores = Object.keys(vendEfetivoMap)
-                .sort((a,b) => vendEfetivoMap[b].valTotalQ - vendEfetivoMap[a].valTotalQ);
-
-            if (chartVendedorEfetivoInstance) chartVendedorEfetivoInstance.destroy();
-            chartVendedorEfetivoInstance = new Chart(document.getElementById('chartVendedorEfetivo'), {
-                type: 'bar',
-                data: {
-                    labels: vendedoresComValores,
-                    datasets: [
-                        { label: 'Em Negociação', data: vendedoresComValores.map(v => vendEfetivoMap[v].negociacaoVal), backgroundColor: '#f59e0b', borderRadius: 3 },
-                        { label: 'Aprovado', data: vendedoresComValores.map(v => vendEfetivoMap[v].aprovadoVal), backgroundColor: '#10b981', borderRadius: 3 },
-                        { label: 'Perdido/Cancelado', data: vendedoresComValores.map(v => vendEfetivoMap[v].perdidoVal), backgroundColor: '#ef4444', borderRadius: 3 }
-                    ]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9 } } }
-                    },
-                    scales: {
-                        x: { ticks: { font: { size: 9 }, maxRotation: 30, minRotation: 30 } },
-                        y: { beginAtZero: true, ticks: { font: { size: 9 }, callback: v => 'R$' + (v/1000).toFixed(0) + 'k' } }
-                    }
-                }
-            });
-        }
-
-        function fmtMoeda(val) {
-            return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        }
-
-        ['filtroAno', 'filtroMes', 'filtroVendedor', 'filtroStatus', 'filtroUF'].forEach(id => {
-            document.getElementById(id).addEventListener('change', atualizarDashboard);
-        });
-        document.getElementById('filtroBusca').addEventListener('input', atualizarDashboard);
-        document.getElementById('btnLimpar').addEventListener('click', () => {
-            document.getElementById('filtroAno').value = "2026";
-            document.getElementById('filtroMes').value = "";
-            document.getElementById('filtroVendedor').value = "";
-            document.getElementById('filtroStatus').value = "";
-            document.getElementById('filtroUF').value = "";
-            document.getElementById('filtroBusca').value = "";
-            atualizarDashboard();
-        });
-    </script>
-</body>
-</html>
+    <!-- TABELA DE DETALHAMENTO NO FINAL DA ROLAGEM COM DESIGN EXECUTIVO -->
+    <div class="card-dash p-6 mb-8">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 pb-3 border-b border-slate-100 gap-2">
+            <div>
+                <h3 class="text-lg font-black text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-blue-600"></i>
+                    Detalhamento dos Orçamentos (<span id="countTabela" class="text-blue-600">0</span>)
+                </h3>
+                <p class="text-xs text-slate-400 font-medium mt-0.5">Listagem completa dos registros carregados da planilha</p>
+            </div>
+            <span class="text-xs bg-slate-100 text-slate-600 font-semibold px-3 py-1 rounded-lg">Atualizado dinamicamente</span>
+        </div>
+        
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left text-sm text-slate-700">
+                <thead class="bg
