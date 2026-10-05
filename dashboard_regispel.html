@@ -3,63 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>REGISPEL - Dashboard Executivo</title>
+    <title>REGISPEL - Dashboard de Orçamentos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #f1f5f9; color: #0f172a; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-        .card-dash { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 16px; box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.05); transition: transform 0.15s ease, box-shadow 0.15s ease; }
-        .card-dash:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -3px rgba(15, 23, 42, 0.08); }
-        .card-kpi-indigo { background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%); border-left: 5px solid #6366f1; }
-        .card-kpi-blue { background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%); border-left: 5px solid #3b82f6; }
-        .card-kpi-amber { background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%); border-left: 5px solid #f59e0b; }
-        .card-kpi-emerald { background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%); border-left: 5px solid #10b981; }
-        .card-kpi-rose { background: linear-gradient(135deg, #ffffff 0%, #fff1f2 100%); border-left: 5px solid #ef4444; }
-        .table-scroll-container { max-height: 280px; overflow-y: auto; overflow-x: auto; }
-        .table-scroll-container thead th { position: sticky; top: 0; z-index: 10; background-color: #1e293b; }
+        body { background-color: #f1f5f9; color: #1e293b; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card-dash { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
+        .card-destaque { background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #93c5fd; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05); }
     </style>
 </head>
-<body class="p-4 md:p-8 max-w-[1600px] mx-auto">
+<body class="p-6">
 
-    <!-- Header Principal -->
-    <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-slate-300 gap-4">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b border-slate-300">
         <div>
-            <div class="flex items-center gap-3">
-                <span class="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider shadow-sm">REGISPEL</span>
-                <h1 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Painel Comercial de Orçamentos</h1>
+            <div class="flex items-center gap-2">
+                <span class="bg-blue-600 text-xs font-bold px-2 py-1 rounded text-white">ABA: BASE_ORCAMENTOS</span>
+                <h1 class="text-2xl font-bold text-blue-600">REGISPEL - Controle de Orçamentos</h1>
             </div>
-            <p class="text-slate-500 text-sm mt-1 font-medium">Análise e Acompanhamento de Vendas (Base: BASE_ORCAMENTOS)</p>
+            <p class="text-slate-500 text-sm mt-1">Painel Comercial com Filtro por Ano e Mês</p>
         </div>
-        <div class="flex flex-wrap gap-3">
-            <label class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm px-4 py-2.5 rounded-xl cursor-pointer flex items-center gap-2 transition shadow-md">
+        <div class="mt-4 md:mt-0 flex gap-3">
+            <label class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-lg cursor-pointer flex items-center gap-2 transition shadow-lg">
                 <i class="fa-solid fa-file-excel"></i> Carregar Planilha Local
-                <input type="file" id="inputExcel" accept=".xlsx, .xls, .xlsm, .csv" class="hidden">
+                <input type="file" id="inputExcel" accept=".xlsx, .xls, .xlsm" class="hidden">
             </label>
-            <button id="btnLimpar" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-semibold text-sm px-4 py-2.5 rounded-xl transition shadow-sm">
-                <i class="fa-solid fa-arrows-rotate mr-1.5 text-slate-400"></i> Limpar Filtros
+            <button id="btnLimpar" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg transition">
+                <i class="fa-solid fa-arrows-rotate mr-1"></i> Limpar Filtros
             </button>
         </div>
     </header>
 
-    <!-- Status de Carregamento -->
-    <div id="statusCarregamento" class="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm">
-        <i class="fa-solid fa-circle-info text-amber-600 text-base"></i>
-        <span>Clique no botão verde <strong>"Carregar Planilha Local"</strong> para selecionar o ficheiro do seu computador ou rede.</span>
+    <!-- Indicador de Carregamento Automático -->
+    <div id="statusCarregamento" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold rounded-lg flex items-center gap-2">
+        <i class="fa-solid fa-spinner fa-spin text-sm"></i>
+        <span>Carregando a planilha mais recente do servidor...</span>
     </div>
 
-    <!-- Filtros Superiores -->
-    <div class="card-dash p-4 mb-6 grid grid-cols-2 md:grid-cols-6 gap-3">
+    <!-- Filtros -->
+    <div class="card-dash p-4 mb-6 grid grid-cols-1 md:grid-cols-6 gap-4">
         <div>
-            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Ano</label>
-            <select id="filtroAno" class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <label class="text-xs font-semibold text-slate-500 uppercase">Ano</label>
+            <select id="filtroAno" class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-800 focus:outline-none focus:border-blue-500">
                 <option value="">Todos os Anos</option>
             </select>
         </div>
         <div>
-            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Mês</label>
-            <select id="filtroMes" class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <label class="text-xs font-semibold text-slate-500 uppercase">Mês</label>
+            <select id="filtroMes" class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-800 focus:outline-none focus:border-blue-500">
                 <option value="">Todos os Meses</option>
                 <option value="1">Janeiro</option>
                 <option value="2">Fevereiro</option>
@@ -76,172 +69,124 @@
             </select>
         </div>
         <div>
-            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Vendedor</label>
-            <select id="filtroVendedor" class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <label class="text-xs font-semibold text-slate-500 uppercase">Vendedor</label>
+            <select id="filtroVendedor" class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-800 focus:outline-none focus:border-blue-500">
                 <option value="">Todos os Vendedores</option>
             </select>
         </div>
         <div>
-            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Status</label>
-            <select id="filtroStatus" class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <label class="text-xs font-semibold text-slate-500 uppercase">Status</label>
+            <select id="filtroStatus" class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-800 focus:outline-none focus:border-blue-500">
                 <option value="">Todos os Status</option>
             </select>
         </div>
         <div>
-            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Motivo de Perda</label>
-            <select id="filtroMotivo" class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <label class="text-xs font-semibold text-slate-500 uppercase">Motivo de Perda</label>
+            <select id="filtroMotivo" class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-800 focus:outline-none focus:border-blue-500">
                 <option value="">Todos os Motivos</option>
             </select>
         </div>
         <div>
-            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Buscar Cliente / ORC</label>
-            <input type="text" id="filtroBusca" placeholder="Cliente ou ORC..." class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-sm text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <label class="text-xs font-semibold text-slate-500 uppercase">Buscar Cliente / ORC</label>
+            <input type="text" id="filtroBusca" placeholder="Ex: Savegnago ou ORC..." class="w-full mt-1 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-800 focus:outline-none focus:border-blue-500">
         </div>
     </div>
 
-    <!-- CARDS DE MÉTRICAS INDIVIDUAIS -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        
-        <!-- CARD 1: TICKET MÉDIO GERAL -->
-        <div class="card-dash card-kpi-indigo p-4">
-            <div class="flex justify-between items-start">
-                <div>
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-600 block">Ticket Médio Geral</span>
-                </div>
-                <div class="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-base">
-                    <i class="fa-solid fa-chart-line"></i>
-                </div>
-            </div>
-            <h2 id="kpiTicketMedio" class="text-2xl font-black text-slate-900 mt-2">R$ 0,00</h2>
-            <div class="mt-3 pt-2 border-t border-indigo-100 flex justify-between items-center bg-indigo-600/10 px-2.5 py-1.5 rounded-lg">
-                <span class="text-xs font-bold text-indigo-900 uppercase">Taxa Conversão:</span>
-                <span id="kpiConversao" class="text-sm font-black text-indigo-700">0%</span>
-            </div>
-        </div>
-
-        <!-- CARD 2: VALOR TOTAL EFETIVO -->
-        <div class="card-dash card-kpi-blue p-4">
-            <div class="flex justify-between items-start">
-                <div>
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-blue-600 block">Valor Total Efetivo</span>
-                </div>
-                <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-base">
-                    <i class="fa-solid fa-coins"></i>
-                </div>
-            </div>
-            <h2 id="kpiSomaTotalGeral" class="text-2xl font-black text-slate-900 mt-2">R$ 0,00</h2>
-            <div class="mt-3 pt-2 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
-                <span>Qtd de Itens:</span>
-                <span id="kpiItens" class="font-bold text-slate-800">0</span>
-            </div>
-        </div>
-
-        <!-- CARD 3: EM NEGOCIAÇÃO -->
-        <div class="card-dash card-kpi-amber p-4">
-            <div class="flex justify-between items-start">
-                <div>
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-amber-600 block">Em Negociação</span>
-                </div>
-                <div class="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 font-bold text-base">
-                    <i class="fa-solid fa-hourglass-half"></i>
-                </div>
-            </div>
-            <h2 id="subTotalNegociacao" class="text-2xl font-black text-slate-900 mt-2">R$ 0,00</h2>
-            <div class="mt-3 pt-2 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
-                <span>Orçamentos:</span>
-                <span id="cntNegociacao" class="font-bold text-amber-600">0 itens</span>
-            </div>
-        </div>
-
-        <!-- CARD 4: VENDAS APROVADAS -->
-        <div class="card-dash card-kpi-emerald p-4">
-            <div class="flex justify-between items-start">
-                <div>
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-600 block">Vendas Aprovadas</span>
-                </div>
-                <div class="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-base">
-                    <i class="fa-solid fa-circle-check"></i>
-                </div>
-            </div>
-            <h2 id="subTotalAprovadoEfetivo" class="text-2xl font-black text-slate-900 mt-2">R$ 0,00</h2>
-            <div class="mt-3 pt-2 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
-                <span>Concluídos:</span>
-                <span id="cntAprovado" class="font-bold text-emerald-600">0 aprovados</span>
-            </div>
-        </div>
-
-        <!-- CARD 5: CANCELADO / PERDIDO -->
-        <div class="card-dash card-kpi-rose p-4">
-            <div class="flex justify-between items-start">
-                <div>
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-rose-600 block">Perdido / Cancelado</span>
-                </div>
-                <div class="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 font-bold text-base">
-                    <i class="fa-solid fa-circle-xmark"></i>
-                </div>
-            </div>
-            <h2 id="subTotalPerdido" class="text-2xl font-black text-slate-900 mt-2">R$ 0,00</h2>
-            <div class="mt-3 pt-2 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
-                <span>Perdidos:</span>
-                <span id="cntPerdido" class="font-bold text-rose-600">0 cancelados</span>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- GRÁFICOS -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-        <div class="card-dash p-5">
-            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
-                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-chart-pie text-blue-600"></i> Distribuição por Status</h3>
-                <span class="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded">Geral</span>
-            </div>
-            <div class="h-[260px] flex justify-center items-center"><canvas id="chartStatus"></canvas></div>
-        </div>
-        
-        <div class="card-dash p-5">
-            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
-                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Motivos de Perda</h3>
-                <span class="text-[10px] bg-rose-50 text-rose-600 font-semibold px-2 py-0.5 rounded">Coluna U</span>
-            </div>
-            <div class="h-[260px] flex justify-center items-center"><canvas id="chartMotivosPerda"></canvas></div>
-        </div>
-
-        <div class="card-dash p-5">
-            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
-                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-chart-column text-indigo-600"></i> Ticket Médio por Vendedor</h3>
-                <span class="text-[10px] bg-indigo-50 text-indigo-600 font-semibold px-2 py-0.5 rounded">Todos os Vendedores</span>
-            </div>
-            <div class="h-[260px]"><canvas id="chartQtdVendedor"></canvas></div>
-        </div>
-        
-        <div class="card-dash p-5">
-            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
-                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-sack-dollar text-emerald-600"></i> Volume R$ por Vendedor</h3>
-                <span class="text-[10px] bg-amber-50 text-amber-600 font-semibold px-2 py-0.5 rounded">Status Preenchidos</span>
-            </div>
-            <div class="h-[260px]"><canvas id="chartVendedorEfetivo"></canvas></div>
-        </div>
-    </div>
-
-    <!-- TABELA -->
-    <div class="card-dash p-5 mb-8">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 pb-3 border-b border-slate-100 gap-2">
+    <!-- CARD CONSOLIDADO -->
+    <div class="card-destaque p-5 mb-6 rounded-xl shadow-xl">
+        <div class="flex flex-col md:flex-row justify-between items-center border-b border-slate-200 pb-4 mb-4">
             <div>
-                <h3 class="text-base font-black text-slate-900 flex items-center gap-2">
-                    <i class="fa-solid fa-list-check text-blue-600"></i>
-                    Detalhamento dos Orçamentos (<span id="countTabela" class="text-blue-600">0</span>)
-                </h3>
-                <p class="text-xs text-slate-400 font-medium mt-0.5">Role na caixa abaixo para visualizar todos os registros</p>
+                <span class="text-xs font-bold uppercase tracking-wider text-blue-600">Visão Geral Consolidada</span>
+                <h3 class="text-lg font-bold text-slate-800">Resumo de Totais e Ticket Médio</h3>
             </div>
-            <span class="text-xs bg-slate-100 text-slate-600 font-semibold px-3 py-1 rounded-lg">Atualizado dinamicamente</span>
+            <div class="flex gap-6 mt-3 md:mt-0 text-right">
+                <div>
+                    <span class="text-xs text-slate-500 block uppercase font-semibold">Ticket Médio Geral</span>
+                    <span id="kpiTicketMedio" class="text-2xl font-black text-slate-800">R$ 0,00</span>
+                    <span class="text-xs text-indigo-700 font-bold block mt-1">Taxa Conversão: <span id="kpiConversao">0%</span></span>
+                </div>
+                <div class="border-l border-slate-300 pl-6">
+                    <span class="text-xs text-blue-600 block uppercase font-semibold">Valor Total Efetivo</span>
+                    <span id="kpiSomaTotalGeral" class="text-2xl font-black text-blue-600">R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+            <div class="bg-slate-100 p-3 rounded-lg border border-slate-200">
+                <p class="text-xs font-semibold text-amber-600 uppercase"><i class="fa-solid fa-hourglass-half mr-1"></i> Em Negociação</p>
+                <p id="subTotalNegociacao" class="text-xl font-bold text-slate-800 mt-1">R$ 0,00</p>
+            </div>
+            <div class="bg-slate-100 p-3 rounded-lg border border-slate-200">
+                <p class="text-xs font-semibold text-emerald-600 uppercase"><i class="fa-solid fa-circle-check mr-1"></i> Total Aprovado</p>
+                <p id="subTotalAprovadoEfetivo" class="text-xl font-bold text-slate-800 mt-1">R$ 0,00</p>
+            </div>
+            <div class="bg-slate-100 p-3 rounded-lg border border-slate-200">
+                <p class="text-xs font-semibold text-rose-600 uppercase"><i class="fa-solid fa-circle-xmark mr-1"></i> Total Cancelado / Perdido</p>
+                <p id="subTotalPerdido" class="text-xl font-bold text-slate-800 mt-1">R$ 0,00</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPIs Tradicionais -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="card-dash p-4">
+            <p class="text-xs font-bold text-slate-500 uppercase">Qtd de Itens</p>
+            <h2 id="kpiItens" class="text-2xl font-black text-slate-800 mt-1">0</h2>
+            <span class="text-xs text-slate-400">Itens Cotados</span>
+        </div>
+        <div class="card-dash p-4">
+            <p class="text-xs font-bold text-slate-500 uppercase">Em Negociação</p>
+            <h2 id="kpiNegociacao" class="text-2xl font-black text-amber-600 mt-1">R$ 0,00</h2>
+            <span id="cntNegociacao" class="text-xs text-amber-600 font-semibold">0 itens</span>
+        </div>
+        <div class="card-dash p-4">
+            <p class="text-xs font-bold text-slate-500 uppercase">Vendas Aprovadas</p>
+            <h2 id="kpiAprovado" class="text-2xl font-black text-emerald-600 mt-1">R$ 0,00</h2>
+            <span id="cntAprovado" class="text-xs text-emerald-600 font-semibold">0 aprovados de 0</span>
+        </div>
+        <div class="card-dash p-4">
+            <p class="text-xs font-bold text-slate-500 uppercase">Perdido / Cancelado</p>
+            <h2 id="kpiPerdido" class="text-2xl font-black text-rose-600 mt-1">R$ 0,00</h2>
+            <span id="cntPerdido" class="text-xs text-rose-600 font-semibold">0 cancelados/perdidos</span>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="card-dash p-4">
+            <h3 class="text-sm font-bold text-slate-700 mb-4 uppercase"><i class="fa-solid fa-chart-pie mr-2 text-blue-600"></i>Distribuição por Status</h3>
+            <div class="h-64 flex justify-center"><canvas id="chartStatus"></canvas></div>
+        </div>
+        <div class="card-dash p-4">
+            <h3 class="text-sm font-bold text-slate-700 mb-4 uppercase"><i class="fa-solid fa-triangle-exclamation mr-2 text-rose-600"></i>Motivos de Perda</h3>
+            <div class="h-64 flex justify-center"><canvas id="chartMotivosPerda"></canvas></div>
+        </div>
+        <div class="card-dash p-4">
+            <h3 class="text-sm font-bold text-slate-700 mb-4 uppercase"><i class="fa-solid fa-chart-column mr-2 text-indigo-600"></i>Ticket Médio e Qtd por Vendedor</h3>
+            <div class="h-64"><canvas id="chartQtdVendedor"></canvas></div>
+        </div>
+        <div class="card-dash p-4">
+            <h3 class="text-sm font-bold text-slate-700 mb-4 uppercase"><i class="fa-solid fa-sack-dollar mr-2 text-emerald-600"></i>Volume R$ por Vendedor</h3>
+            <div class="h-64"><canvas id="chartVendedorEfetivo"></canvas></div>
+        </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card-dash p-5 mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-base font-bold text-slate-800">
+                <i class="fa-solid fa-table-list mr-2 text-blue-600"></i>
+                Detalhamento dos Orçamentos (<span id="countTabela">0</span> registros)
+            </h3>
+            <span class="text-xs text-slate-500">Atualizado dinamicamente pelos filtros</span>
         </div>
         
-        <div class="table-scroll-container rounded-xl border border-slate-200">
+        <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-slate-700">
-                <thead class="bg-slate-800 text-white text-[11px] font-bold uppercase tracking-wider">
+                <thead class="bg-slate-100 text-xs uppercase text-slate-600 border-b border-slate-300">
                     <tr>
-                        <th class="p-3">Nº ORC</th>
+                        <th class="p-3">Nº Orçamento</th>
                         <th class="p-3">Data</th>
                         <th class="p-3">Cliente</th>
                         <th class="p-3 text-center">UF</th>
@@ -254,9 +199,9 @@
                         <th class="p-3">Motivo de Perda</th>
                     </tr>
                 </thead>
-                <tbody id="corpoTabela" class="divide-y divide-slate-200/60 font-medium">
+                <tbody id="corpoTabela" class="divide-y divide-slate-200">
                     <tr>
-                        <td colspan="11" class="p-8 text-center text-slate-400 font-medium">Nenhum dado carregado. Importe a planilha no topo.</td>
+                        <td colspan="11" class="p-4 text-center text-slate-400">Nenhum dado carregado. Importe a planilha no topo.</td>
                     </tr>
                 </tbody>
             </table>
@@ -270,18 +215,48 @@
         let chartQtdVendedorInstance = null;
         let chartVendedorEfetivoInstance = null;
 
-        // LEITURA DIRETA SEM POP-UPS DE ALERTA
+        window.addEventListener('DOMContentLoaded', () => {
+            carregarPlanilhaAutomatica();
+        });
+
+        function carregarPlanilhaAutomatica() {
+            const statusDiv = document.getElementById('statusCarregamento');
+            statusDiv.classList.remove('hidden');
+
+            const nomeArquivoGitHub = 'Base_Orcamentos.xlsx';
+
+            fetch(nomeArquivoGitHub + '?v=' + new Date().getTime())
+                .then(response => {
+                    if (!response.ok) throw new Error('Planilha padrão não encontrada no GitHub.');
+                    return response.arrayBuffer();
+                })
+                .then(buffer => {
+                    const data = new Uint8Array(buffer);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    let sheetName = "Base_Orcamentos";
+                    if (!workbook.SheetNames.includes(sheetName)) sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+                    
+                    processarDadosBase(json);
+                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i><span class="text-emerald-700">Dados da planilha mais recente carregados automaticamente!</span>`;
+                    setTimeout(() => statusDiv.classList.add('hidden'), 4000);
+                })
+                .catch(err => {
+                    statusDiv.classList.add('hidden');
+                });
+        }
+
         document.getElementById('inputExcel').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-
             reader.onload = function(evt) {
                 try {
                     const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
                     let sheetName = "Base_Orcamentos";
                     if (!workbook.SheetNames.includes(sheetName)) {
                         sheetName = workbook.SheetNames[0];
@@ -291,16 +266,10 @@
                     const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
 
                     processarDadosBase(json);
-
-                    const statusDiv = document.getElementById('statusCarregamento');
-                    statusDiv.className = "mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm";
-                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>Planilha (${file.name}) processada com sucesso!</span>`;
-                    setTimeout(() => statusDiv.classList.add('hidden'), 3500);
                 } catch (err) {
-                    console.error("Erro na leitura:", err);
+                    console.error("Erro silencioso na leitura:", err);
                 }
             };
-
             reader.readAsArrayBuffer(file);
         });
 
@@ -327,8 +296,8 @@
                 const numOrc = (r[0] || "").toString().trim();
                 if (!numOrc) continue;
 
-                let valQ = converterValor(r[16]);
-                let valR = converterValor(r[17]);
+                let valQ = converterValor(r[16]); // Coluna Q (Valor Total Efetivo)
+                let valR = converterValor(r[17]); // Coluna R (Ticket Médio)
 
                 const t1 = converterValor(r[9]);
                 const t2 = converterValor(r[12]);
@@ -339,12 +308,14 @@
                     if (t1 > 0) { somaT += t1; countT++; }
                     if (t2 > 0) { somaT += t2; countT++; }
                     if (t3 > 0) { somaT += t3; countT++; }
+
                     if (countT > 0) valR = somaT / countT;
                     else valR = valQ;
                 }
 
-                let statusBruto = (r[18] || "").toString().trim();
-                let motivoPerda = (r[20] || "").toString().trim();
+                // REGRA NOVA DE STATUS + MOTIVO DE PERDA
+                let statusBruto = (r[18] || "").toString().trim(); // Coluna S
+                let motivoPerda = (r[20] || "").toString().trim(); // Coluna U
 
                 let statusLimpo = statusBruto.toUpperCase();
                 let motivoLimpo = motivoPerda.toUpperCase();
@@ -423,9 +394,13 @@
             
             const selectAno = document.getElementById('filtroAno');
             selectAno.innerHTML = `<option value="">Todos os Anos</option>`;
-            anos.forEach(a => { selectAno.innerHTML += `<option value="${a}">${a}</option>`; });
+            anos.forEach(a => {
+                selectAno.innerHTML += `<option value="${a}">${a}</option>`;
+            });
 
-            if (anos.includes(2026)) selectAno.value = "2026";
+            if (anos.includes(2026)) {
+                selectAno.value = "2026";
+            }
         }
 
         function preencherSelect(id, lista, textoPadrao) {
@@ -484,17 +459,21 @@
 
             const taxaConversao = totalItens > 0 ? ((cntAprov / totalItens) * 100).toFixed(1) : 0;
 
+            document.getElementById('kpiTicketMedio').innerText = fmtMoeda(somaColunaR);
             document.getElementById('kpiSomaTotalGeral').innerText = fmtMoeda(somaTotalColunaQ);
             document.getElementById('subTotalNegociacao').innerText = fmtMoeda(valorNegociacao);
             document.getElementById('subTotalAprovadoEfetivo').innerText = fmtMoeda(valorAprovadoEfetivo);
             document.getElementById('subTotalPerdido').innerText = fmtMoeda(valorPerdidoCancelado);
-            document.getElementById('kpiTicketMedio').innerText = fmtMoeda(somaColunaR);
 
             document.getElementById('kpiItens').innerText = totalItens;
-            document.getElementById('cntNegociacao').innerText = `${cntNegoc} em negociação`;
-            document.getElementById('cntAprovado').innerText = `${cntAprov} de ${totalItens}`;
-            document.getElementById('cntPerdido').innerText = `${cntPerd} cancelados`;
+            document.getElementById('kpiNegociacao').innerText = fmtMoeda(valorNegociacao);
+            document.getElementById('kpiAprovado').innerText = fmtMoeda(valorAprovadoEfetivo);
+            document.getElementById('kpiPerdido').innerText = fmtMoeda(valorPerdidoCancelado);
             document.getElementById('kpiConversao').innerText = taxaConversao + '%';
+
+            document.getElementById('cntNegociacao').innerText = `${cntNegoc} em negociação`;
+            document.getElementById('cntAprovado').innerText = `${cntAprov} aprovados de ${totalItens}`;
+            document.getElementById('cntPerdido').innerText = `${cntPerd} cancelados/perdidos`;
 
             renderizarGraficos(filtrados);
             renderizarTabela(filtrados);
@@ -505,31 +484,30 @@
             document.getElementById('countTabela').innerText = dados.length;
 
             if (dados.length === 0) {
-                corpo.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
+                corpo.innerHTML = `<tr><td colspan="11" class="p-4 text-center text-slate-400">Nenhum orçamento encontrado para os filtros selecionados.</td></tr>`;
                 return;
             }
 
             let html = "";
             dados.forEach(d => {
-                let badgeCor = "bg-slate-100 text-slate-700 border border-slate-300";
-                if (d.status === "Aprovado") badgeCor = "bg-emerald-100 text-emerald-800 border border-emerald-300";
-                else if (d.status === "Perdido/Cancelado") badgeCor = "bg-rose-100 text-rose-800 border border-rose-300";
-                else if (d.status === "Em Negociação") badgeCor = "bg-amber-100 text-amber-800 border border-amber-300";
-                else if (d.status === "Aguardando Retorno") badgeCor = "bg-sky-100 text-sky-800 border border-sky-300";
+                let badgeCor = "bg-slate-200 text-slate-700";
+                if (d.status === "Aprovado") badgeCor = "bg-emerald-100 text-emerald-700 border border-emerald-300";
+                else if (d.status === "Em Negociação") badgeCor = "bg-amber-100 text-amber-700 border border-amber-300";
+                else if (d.status === "Perdido/Cancelado") badgeCor = "bg-rose-100 text-rose-700 border border-rose-300";
 
                 html += `
-                    <tr class="hover:bg-slate-100/70 transition even:bg-slate-50/50">
-                        <td class="p-3 font-bold text-blue-600">${d.numOrc}</td>
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-semibold text-blue-600">${d.numOrc}</td>
                         <td class="p-3 text-slate-500 text-xs">${d.data}</td>
-                        <td class="p-3 font-semibold text-slate-800">${d.cliente}</td>
-                        <td class="p-3 text-center"><span class="bg-slate-200/70 text-slate-700 font-bold px-2 py-0.5 rounded text-xs">${d.uf}</span></td>
-                        <td class="p-3 text-slate-700 font-medium">${d.vendedor}</td>
+                        <td class="p-3 font-medium text-slate-800">${d.cliente}</td>
+                        <td class="p-3 text-center"><span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded text-xs">${d.uf}</span></td>
+                        <td class="p-3 text-slate-700">${d.vendedor}</td>
                         <td class="p-3 text-slate-600 text-xs max-w-xs truncate">${d.descricao}</td>
                         <td class="p-3 text-slate-500 text-xs">${d.papel}</td>
-                        <td class="p-3 text-right font-mono font-medium">${d.qtd.toLocaleString('pt-BR')}</td>
-                        <td class="p-3 text-right font-bold text-slate-900">${fmtMoeda(d.totalEfetivo)}</td>
-                        <td class="p-3 text-center"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${badgeCor}">${d.status}</span></td>
-                        <td class="p-3 text-xs text-rose-700 font-semibold">${d.motivoPerda}</td>
+                        <td class="p-3 text-right font-mono">${d.qtd.toLocaleString('pt-BR')}</td>
+                        <td class="p-3 text-right font-semibold text-slate-800">${fmtMoeda(d.totalEfetivo)}</td>
+                        <td class="p-3 text-center"><span class="px-2 py-1 rounded text-xs font-bold ${badgeCor}">${d.status}</span></td>
+                        <td class="p-3 text-xs font-semibold text-rose-600">${d.motivoPerda}</td>
                     </tr>
                 `;
             });
@@ -537,6 +515,7 @@
         }
 
         function renderizarGraficos(dados) {
+            // 1. Status
             const statusCounts = {};
             dados.forEach(d => { statusCounts[d.status] = (statusCounts[d.status] || 0) + 1; });
 
@@ -547,20 +526,13 @@
                     labels: Object.keys(statusCounts),
                     datasets: [{
                         data: Object.values(statusCounts),
-                        backgroundColor: ['#38bdf8', '#f59e0b', '#10b981', '#ef4444', '#6366f1', '#64748b'],
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
+                        backgroundColor: ['#f59e0b', '#10b981', '#ef4444', '#6366f1', '#64748b']
                     }]
                 },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10, weight: 'bold' } } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false }
             });
 
+            // 2. Motivos de Perda (Coluna U)
             const motivosMap = {};
             dados.filter(d => d.status === "Perdido/Cancelado").forEach(d => {
                 const m = d.motivoPerda || "Não Especificado";
@@ -574,58 +546,48 @@
                     labels: Object.keys(motivosMap).length > 0 ? Object.keys(motivosMap) : ['Sem Perdas'],
                     datasets: [{
                         data: Object.keys(motivosMap).length > 0 ? Object.values(motivosMap) : [1],
-                        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#8b5cf6', '#ec4899', '#cbd5e1'],
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
+                        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#8b5cf6', '#ec4899', '#cbd5e1']
                     }]
                 },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10, weight: 'bold' } } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false }
             });
 
+            // 3. Ticket Médio e Qtd por Vendedor
             const vendSummary = {};
             dados.forEach(d => {
-                if (d.vendedor) {
-                    if (!vendSummary[d.vendedor]) {
-                        vendSummary[d.vendedor] = { qtd: 0, ticketMedio: 0 };
-                    }
-                    vendSummary[d.vendedor].qtd += 1;
-                    vendSummary[d.vendedor].ticketMedio += d.valorColunaR;
+                if (!vendSummary[d.vendedor]) {
+                    vendSummary[d.vendedor] = { qtd: 0, ticketMedio: 0 };
                 }
+                vendSummary[d.vendedor].qtd += 1;
+                vendSummary[d.vendedor].ticketMedio += d.valorColunaR;
             });
 
-            const vendedoresComTicket = Object.keys(vendSummary)
-                .sort((a,b) => vendSummary[b].ticketMedio - vendSummary[a].ticketMedio);
-
-            const arrayQtd = vendedoresComTicket.map(v => vendSummary[v].qtd);
-            const arrayTicket = vendedoresComTicket.map(v => vendSummary[v].ticketMedio);
+            const vendedores = Object.keys(vendSummary).sort((a,b) => vendSummary[b].ticketMedio - vendSummary[a].ticketMedio);
+            const arrayQtd = vendedores.map(v => vendSummary[v].qtd);
+            const arrayTicket = vendedores.map(v => vendSummary[v].ticketMedio);
 
             if (chartQtdVendedorInstance) chartQtdVendedorInstance.destroy();
             chartQtdVendedorInstance = new Chart(document.getElementById('chartQtdVendedor'), {
                 type: 'bar',
                 data: {
-                    labels: vendedoresComTicket,
+                    labels: vendedores,
                     datasets: [
                         {
                             label: 'Ticket Médio (R$)',
                             data: arrayTicket,
                             backgroundColor: 'rgba(59, 130, 246, 0.85)',
-                            borderRadius: 6,
+                            borderColor: '#2563eb',
+                            borderWidth: 1,
                             yAxisID: 'yTicket',
                             order: 2
                         },
                         {
-                            label: 'Qtd Orçamentos',
+                            label: 'Qtd de Orçamentos',
                             data: arrayQtd,
                             type: 'line',
                             borderColor: '#f59e0b',
                             backgroundColor: '#f59e0b',
-                            pointRadius: 4,
+                            pointRadius: 5,
                             fill: false,
                             yAxisID: 'yQtd',
                             order: 1
@@ -635,17 +597,14 @@
                 options: { 
                     responsive: true, 
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9, weight: 'bold' } } }
-                    },
                     scales: { 
-                        x: { ticks: { font: { size: 9, weight: '600' }, maxRotation: 45, minRotation: 45 } },
-                        yTicket: { position: 'left', beginAtZero: true, ticks: { font: { size: 9 }, callback: v => 'R$' + (v/1000).toFixed(0) + 'k' } },
-                        yQtd: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { font: { size: 9 } } }
+                        yTicket: { type: 'linear', position: 'left', beginAtZero: true },
+                        yQtd: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false } }
                     }
                 }
             });
 
+            // 4. Volume R$ por Vendedor (Sem Nomes Zerados)
             const vendEfetivoMap = {};
 
             dados.forEach(d => {
@@ -655,22 +614,25 @@
                             negociacaoVal: 0,
                             aprovadoVal: 0,
                             perdidoVal: 0,
-                            valTotalQ: 0
+                            totalVal: 0
                         };
                     }
-                    if (d.status === "Perdido/Cancelado") {
-                        vendEfetivoMap[d.vendedor].perdidoVal += d.totalEfetivo;
-                    } else if (d.status === "Aprovado") {
+                    if (d.status === "Aprovado") {
                         vendEfetivoMap[d.vendedor].aprovadoVal += d.totalEfetivo;
+                        vendEfetivoMap[d.vendedor].totalVal += d.totalEfetivo;
                     } else if (d.status === "Em Negociação") {
                         vendEfetivoMap[d.vendedor].negociacaoVal += d.totalEfetivo;
+                        vendEfetivoMap[d.vendedor].totalVal += d.totalEfetivo;
+                    } else if (d.status === "Perdido/Cancelado") {
+                        vendEfetivoMap[d.vendedor].perdidoVal += d.totalEfetivo;
+                        vendEfetivoMap[d.vendedor].totalVal += d.totalEfetivo;
                     }
-                    vendEfetivoMap[d.vendedor].valTotalQ += d.totalEfetivo;
                 }
             });
 
             const vendedoresComValores = Object.keys(vendEfetivoMap)
-                .sort((a,b) => vendEfetivoMap[b].valTotalQ - vendEfetivoMap[a].valTotalQ);
+                .filter(v => vendEfetivoMap[v].totalVal > 0)
+                .sort((a,b) => vendEfetivoMap[b].totalVal - vendEfetivoMap[a].totalVal);
 
             if (chartVendedorEfetivoInstance) chartVendedorEfetivoInstance.destroy();
             chartVendedorEfetivoInstance = new Chart(document.getElementById('chartVendedorEfetivo'), {
@@ -678,22 +640,12 @@
                 data: {
                     labels: vendedoresComValores,
                     datasets: [
-                        { label: 'Em Negociação', data: vendedoresComValores.map(v => vendEfetivoMap[v].negociacaoVal), backgroundColor: '#f59e0b', borderRadius: 4 },
-                        { label: 'Aprovado', data: vendedoresComValores.map(v => vendEfetivoMap[v].aprovadoVal), backgroundColor: '#10b981', borderRadius: 4 },
-                        { label: 'Perdido/Cancelado', data: vendedoresComValores.map(v => vendEfetivoMap[v].perdidoVal), backgroundColor: '#ef4444', borderRadius: 4 }
+                        { label: 'Em Negociação', data: vendedoresComValores.map(v => vendEfetivoMap[v].negociacaoVal), backgroundColor: '#f59e0b' },
+                        { label: 'Aprovado', data: vendedoresComValores.map(v => vendEfetivoMap[v].aprovadoVal), backgroundColor: '#10b981' },
+                        { label: 'Perdido/Cancelado', data: vendedoresComValores.map(v => vendEfetivoMap[v].perdidoVal), backgroundColor: '#ef4444' }
                     ]
                 },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9, weight: 'bold' } } }
-                    },
-                    scales: {
-                        x: { ticks: { font: { size: 9, weight: '600' }, maxRotation: 45, minRotation: 45 } },
-                        y: { beginAtZero: true, ticks: { font: { size: 9 }, callback: v => 'R$' + (v/1000).toFixed(0) + 'k' } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false }
             });
         }
 
