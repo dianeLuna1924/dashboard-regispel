@@ -3,58 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>REGISPEL - Dashboard de Orçamentos</title>
+    <title>REGISPEL - Dashboard Executivo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #f8fafc; color: #0f172a; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-        .card-dash { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.04); transition: all 0.2s ease-in-out; }
-        .card-dash:hover { box-shadow: 0 10px 20px -3px rgba(15, 23, 42, 0.08); }
-        .card-destaque { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: #ffffff; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.25); }
+        body { background-color: #f8fafc; color: #0f172a; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; overflow-x: hidden; }
+        .card-dash { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.04); }
+        .card-destaque { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.2); }
+        /* Tabela com Rolagem Interna e Cabeçalho Fixo */
+        .table-scroll { max-height: 260px; overflow-y: auto; }
+        .table-scroll thead th { position: sticky; top: 0; z-index: 10; background-color: #f8fafc; }
     </style>
 </head>
-<body class="p-4 md:p-8 max-w-[1600px] mx-auto">
+<body class="p-3 md:p-5 max-w-[1600px] mx-auto">
 
-    <!-- Header Principal -->
-    <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-slate-200 gap-4">
-        <div>
-            <div class="flex items-center gap-3">
-                <span class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">REGISPEL COMERCIAL</span>
-                <h1 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Painel de Orçamentos</h1>
-            </div>
-            <p class="text-slate-500 text-sm mt-1">Acompanhamento consolidado de propostas e vendas (Base: ABA BASE_ORCAMENTOS)</p>
+    <!-- Header Principal Compacto -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 pb-2 border-b border-slate-200 gap-2">
+        <div class="flex items-center gap-2">
+            <span class="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">REGISPEL</span>
+            <h1 class="text-lg md:text-xl font-black text-slate-900 tracking-tight">Controle de Orçamentos</h1>
         </div>
-        <div class="flex flex-wrap gap-3">
-            <label class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm px-4 py-2.5 rounded-xl cursor-pointer flex items-center gap-2 transition shadow-sm">
-                <i class="fa-solid fa-file-excel"></i> Carregar Planilha Local
+        <div class="flex gap-2">
+            <label class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs px-3 py-1.5 rounded-lg cursor-pointer flex items-center gap-1.5 transition shadow-sm">
+                <i class="fa-solid fa-file-excel"></i> Carregar Planilha
                 <input type="file" id="inputExcel" accept=".xlsx, .xls, .xlsm" class="hidden">
             </label>
-            <button id="btnLimpar" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium text-sm px-4 py-2.5 rounded-xl transition shadow-sm">
-                <i class="fa-solid fa-arrows-rotate mr-1 text-slate-400"></i> Limpar Filtros
+            <button id="btnLimpar" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-sm">
+                <i class="fa-solid fa-arrows-rotate mr-1 text-slate-400"></i> Limpar
             </button>
         </div>
     </header>
 
-    <!-- Status de Carregamento Automático -->
-    <div id="statusCarregamento" class="hidden mb-6 p-4 bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold rounded-xl flex items-center gap-3">
-        <i class="fa-solid fa-circle-notch fa-spin text-base text-blue-600"></i>
-        <span>Sincronizando dados com a planilha do servidor...</span>
+    <!-- Status de Carregamento -->
+    <div id="statusCarregamento" class="hidden mb-2 p-2 bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold rounded-lg flex items-center gap-2">
+        <i class="fa-solid fa-circle-notch fa-spin text-blue-600"></i>
+        <span>Sincronizando dados com a planilha...</span>
     </div>
 
-    <!-- Filtros Superiores -->
-    <div class="card-dash p-5 mb-6 grid grid-cols-2 md:grid-cols-6 gap-4">
+    <!-- Filtros Superiores Compactos -->
+    <div class="card-dash p-2.5 mb-3 grid grid-cols-2 md:grid-cols-6 gap-2">
         <div>
-            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Ano</label>
-            <select id="filtroAno" class="w-full mt-1.5 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                <option value="">Todos os Anos</option>
+            <label class="text-[10px] font-bold text-slate-400 uppercase">Ano</label>
+            <select id="filtroAno" class="w-full mt-0.5 bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs text-slate-800 font-medium focus:outline-none">
+                <option value="">Todos</option>
             </select>
         </div>
         <div>
-            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Mês</label>
-            <select id="filtroMes" class="w-full mt-1.5 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                <option value="">Todos os Meses</option>
+            <label class="text-[10px] font-bold text-slate-400 uppercase">Mês</label>
+            <select id="filtroMes" class="w-full mt-0.5 bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs text-slate-800 font-medium focus:outline-none">
+                <option value="">Todos</option>
                 <option value="1">Janeiro</option>
                 <option value="2">Fevereiro</option>
                 <option value="3">Março</option>
@@ -70,119 +69,108 @@
             </select>
         </div>
         <div>
-            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Vendedor</label>
-            <select id="filtroVendedor" class="w-full mt-1.5 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <label class="text-[10px] font-bold text-slate-400 uppercase">Vendedor</label>
+            <select id="filtroVendedor" class="w-full mt-0.5 bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs text-slate-800 font-medium focus:outline-none">
                 <option value="">Todos os Vendedores</option>
             </select>
         </div>
         <div>
-            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Status</label>
-            <select id="filtroStatus" class="w-full mt-1.5 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <label class="text-[10px] font-bold text-slate-400 uppercase">Status</label>
+            <select id="filtroStatus" class="w-full mt-0.5 bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs text-slate-800 font-medium focus:outline-none">
                 <option value="">Todos os Status</option>
             </select>
         </div>
         <div>
-            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">UF</label>
-            <select id="filtroUF" class="w-full mt-1.5 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                <option value="">Todas as UFs</option>
+            <label class="text-[10px] font-bold text-slate-400 uppercase">UF</label>
+            <select id="filtroUF" class="w-full mt-0.5 bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs text-slate-800 font-medium focus:outline-none">
+                <option value="">Todas</option>
             </select>
         </div>
         <div>
-            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Buscar Cliente / ORC</label>
-            <input type="text" id="filtroBusca" placeholder="Ex: Savegnago ou ORC..." class="w-full mt-1.5 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <label class="text-[10px] font-bold text-slate-400 uppercase">Buscar Cliente/ORC</label>
+            <input type="text" id="filtroBusca" placeholder="Cliente ou ORC..." class="w-full mt-0.5 bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs text-slate-800 focus:outline-none">
         </div>
     </div>
 
-    <!-- PAINEL CONSOLIDADO PRINCIPAL -->
-    <div class="card-destaque p-6 mb-6">
-        <div class="flex flex-col lg:flex-row justify-between lg:items-center border-b border-blue-400/30 pb-5 mb-5 gap-4">
-            <div>
-                <span class="text-xs font-bold uppercase tracking-widest text-blue-200">Resumo de Totais & Métricas</span>
-                <h2 class="text-xl md:text-2xl font-black mt-1">Visão Geral Consolidada</h2>
-            </div>
-            <div class="flex flex-wrap gap-6 text-left lg:text-right">
-                <div class="bg-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
-                    <span class="text-[11px] text-blue-200 uppercase font-semibold block">Ticket Médio Geral (Coluna R)</span>
-                    <span id="kpiTicketMedio" class="text-xl md:text-2xl font-black">R$ 0,00</span>
-                </div>
-                <div class="bg-white/20 px-4 py-2 rounded-xl backdrop-blur-md border border-white/20">
-                    <span class="text-[11px] text-blue-100 uppercase font-bold block">Valor Total Efetivo (Coluna Q)</span>
-                    <span id="kpiSomaTotalGeral" class="text-xl md:text-2xl font-black text-amber-300">R$ 0,00</span>
-                </div>
+    <!-- PAINEL CONSOLIDADO COMPACTO -->
+    <div class="card-destaque p-3.5 mb-3">
+        <div class="flex justify-between items-center border-b border-blue-400/30 pb-2 mb-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-200"><i class="fa-solid fa-chart-line mr-1"></i> Resumo Geral Consolidado</span>
+            <div class="flex gap-4">
+                <span class="text-xs text-blue-100">Ticket Médio (R): <strong id="kpiTicketMedio" class="text-white font-black text-sm">R$ 0,00</strong></span>
+                <span class="text-xs text-blue-100">Total Efetivo (Q): <strong id="kpiSomaTotalGeral" class="text-amber-300 font-black text-sm">R$ 0,00</strong></span>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-white/10">
-                <p class="text-xs font-bold text-amber-300 uppercase flex items-center gap-1.5"><i class="fa-solid fa-hourglass-half"></i> Em Negociação</p>
-                <p id="subTotalNegociacao" class="text-2xl font-black text-white mt-1">R$ 0,00</p>
-                <span id="cntNegociacao" class="text-xs text-blue-200 font-medium mt-1 block">0 itens</span>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div class="bg-white/10 p-2 rounded-lg border border-white/10">
+                <span class="text-[10px] font-bold text-amber-300 uppercase block">Em Negociação</span>
+                <p id="subTotalNegociacao" class="text-base font-black text-white">R$ 0,00</p>
+                <span id="cntNegociacao" class="text-[10px] text-blue-200 font-medium block">0 itens</span>
             </div>
-            <div class="bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-white/10">
-                <p class="text-xs font-bold text-emerald-300 uppercase flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Total Aprovado</p>
-                <p id="subTotalAprovadoEfetivo" class="text-2xl font-black text-white mt-1">R$ 0,00</p>
-                <span id="cntAprovado" class="text-xs text-blue-200 font-medium mt-1 block">0 aprovados</span>
+            <div class="bg-white/10 p-2 rounded-lg border border-white/10">
+                <span class="text-[10px] font-bold text-emerald-300 uppercase block">Total Aprovado</span>
+                <p id="subTotalAprovadoEfetivo" class="text-base font-black text-white">R$ 0,00</p>
+                <span id="cntAprovado" class="text-[10px] text-blue-200 font-medium block">0 aprovados</span>
             </div>
-            <div class="bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-white/10">
-                <p class="text-xs font-bold text-rose-300 uppercase flex items-center gap-1.5"><i class="fa-solid fa-circle-xmark"></i> Perdido / Cancelado</p>
-                <p id="subTotalPerdido" class="text-2xl font-black text-white mt-1">R$ 0,00</p>
-                <span id="cntPerdido" class="text-xs text-blue-200 font-medium mt-1 block">0 cancelados</span>
+            <div class="bg-white/10 p-2 rounded-lg border border-white/10">
+                <span class="text-[10px] font-bold text-rose-300 uppercase block">Perdido / Cancelado</span>
+                <p id="subTotalPerdido" class="text-base font-black text-white">R$ 0,00</p>
+                <span id="cntPerdido" class="text-[10px] text-blue-200 font-medium block">0 cancelados</span>
             </div>
-            <div class="bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-white/10">
-                <p class="text-xs font-bold text-blue-200 uppercase flex items-center gap-1.5"><i class="fa-solid fa-chart-line"></i> Taxa de Conversão</p>
-                <p id="kpiConversao" class="text-2xl font-black text-white mt-1">0%</p>
-                <span id="kpiItensSub" class="text-xs text-blue-200 font-medium mt-1 block">0 itens cotados no total</span>
+            <div class="bg-white/10 p-2 rounded-lg border border-white/10">
+                <span class="text-[10px] font-bold text-blue-200 uppercase block">Taxa Conversão</span>
+                <p id="kpiConversao" class="text-base font-black text-white">0%</p>
+                <span id="kpiItensSub" class="text-[10px] text-blue-200 font-medium block">0 itens cotados</span>
             </div>
         </div>
     </div>
 
-    <!-- GRÁFICOS ORGANIZADOS -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div class="card-dash p-5">
-            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-blue-600"></i> Distribuição por Status</h3>
-            <div class="h-64 flex justify-center items-center"><canvas id="chartStatus"></canvas></div>
+    <!-- 3 GRÁFICOS EM LINHA (ALTURA COMPACTA 180px) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+        <div class="card-dash p-3">
+            <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2"><i class="fa-solid fa-chart-pie text-blue-600 mr-1"></i> Distribuição Status</h3>
+            <div class="h-[180px] flex justify-center items-center"><canvas id="chartStatus"></canvas></div>
         </div>
-        <div class="card-dash p-5">
-            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2"><i class="fa-solid fa-chart-column text-indigo-600"></i> Ticket Médio e Qtd por Vendedor</h3>
-            <div class="h-64"><canvas id="chartQtdVendedor"></canvas></div>
+        <div class="card-dash p-3">
+            <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2"><i class="fa-solid fa-chart-column text-indigo-600 mr-1"></i> Ticket Médio e Qtd</h3>
+            <div class="h-[180px]"><canvas id="chartQtdVendedor"></canvas></div>
         </div>
-        <div class="card-dash p-5">
-            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2"><i class="fa-solid fa-sack-dollar text-emerald-600"></i> Volume R$ por Vendedor (Coluna Q)</h3>
-            <div class="h-64"><canvas id="chartVendedorEfetivo"></canvas></div>
+        <div class="card-dash p-3">
+            <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2"><i class="fa-solid fa-sack-dollar text-emerald-600 mr-1"></i> Volume R$ (Coluna Q)</h3>
+            <div class="h-[180px]"><canvas id="chartVendedorEfetivo"></canvas></div>
         </div>
     </div>
 
-    <!-- TABELA DE DETALHAMENTO -->
-    <div class="card-dash p-6 mb-8">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-2">
-            <div>
-                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <i class="fa-solid fa-list-check text-blue-600"></i>
-                    Detalhamento dos Orçamentos (<span id="countTabela" class="text-blue-600">0</span>)
-                </h3>
-            </div>
-            <span class="text-xs text-slate-400 font-medium">Registros atualizados dinamicamente</span>
+    <!-- TABELA COMPACTA COM ROLAGEM INTERNA E CABEÇALHO FIXO -->
+    <div class="card-dash p-3">
+        <div class="flex justify-between items-center mb-2">
+            <h3 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <i class="fa-solid fa-list-check text-blue-600"></i>
+                Detalhamento dos Orçamentos (<span id="countTabela" class="text-blue-600">0</span>)
+            </h3>
+            <span class="text-[10px] text-slate-400">Role dentro da tabela para ver todos os registros</span>
         </div>
         
-        <div class="overflow-x-auto rounded-xl border border-slate-200">
-            <table class="w-full text-left text-sm text-slate-700">
-                <thead class="bg-slate-50 text-[11px] font-bold uppercase text-slate-500 border-b border-slate-200">
+        <div class="table-scroll rounded-lg border border-slate-200">
+            <table class="w-full text-left text-xs text-slate-700">
+                <thead class="bg-slate-50 text-[10px] font-bold uppercase text-slate-500 border-b border-slate-200">
                     <tr>
-                        <th class="p-3.5">Nº Orçamento</th>
-                        <th class="p-3.5">Data</th>
-                        <th class="p-3.5">Cliente</th>
-                        <th class="p-3.5 text-center">UF</th>
-                        <th class="p-3.5">Vendedor</th>
-                        <th class="p-3.5">Produto / Descrição</th>
-                        <th class="p-3.5">Papel</th>
-                        <th class="p-3.5 text-right">Qtd</th>
-                        <th class="p-3.5 text-right">Valor Total Efetivo (Q)</th>
-                        <th class="p-3.5 text-center">Status</th>
+                        <th class="p-2">Nº ORC</th>
+                        <th class="p-2">Data</th>
+                        <th class="p-2">Cliente</th>
+                        <th class="p-2 text-center">UF</th>
+                        <th class="p-2">Vendedor</th>
+                        <th class="p-2">Produto / Descrição</th>
+                        <th class="p-2">Papel</th>
+                        <th class="p-2 text-right">Qtd</th>
+                        <th class="p-2 text-right">Valor Total Efetivo (Q)</th>
+                        <th class="p-2 text-center">Status</th>
                     </tr>
                 </thead>
-                <tbody id="corpoTabela" class="divide-y divide-slate-100 font-normal">
+                <tbody id="corpoTabela" class="divide-y divide-slate-100">
                     <tr>
-                        <td colspan="10" class="p-6 text-center text-slate-400 font-medium">Nenhum dado carregado. Importe a planilha no topo.</td>
+                        <td colspan="10" class="p-4 text-center text-slate-400">Nenhum dado carregado. Importe a planilha no topo.</td>
                     </tr>
                 </tbody>
             </table>
@@ -219,8 +207,8 @@
                     const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
                     
                     processarDadosBase(json);
-                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i><span class="text-emerald-800">Dados da planilha sincronizados com sucesso!</span>`;
-                    setTimeout(() => statusDiv.classList.add('hidden'), 3500);
+                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-xs"></i><span class="text-emerald-800">Dados da planilha sincronizados com sucesso!</span>`;
+                    setTimeout(() => statusDiv.classList.add('hidden'), 3000);
                 })
                 .catch(err => {
                     statusDiv.classList.add('hidden');
@@ -271,8 +259,8 @@
                 const numOrc = (r[0] || "").toString().trim();
                 if (!numOrc) continue;
 
-                let valQ = converterValor(r[16]); // COLUNA Q: Valor Total Efetivo
-                let valR = converterValor(r[17]); // COLUNA R: Ticket Médio / Cotado
+                let valQ = converterValor(r[16]); // COLUNA Q
+                let valR = converterValor(r[17]); // COLUNA R
 
                 const t1 = converterValor(r[9]);
                 const t2 = converterValor(r[12]);
@@ -357,10 +345,10 @@
 
             preencherSelect('filtroVendedor', vendedores, 'Todos os Vendedores');
             preencherSelect('filtroStatus', statusList, 'Todos os Status');
-            preencherSelect('filtroUF', ufs, 'Todas as UFs');
+            preencherSelect('filtroUF', ufs, 'Todas');
             
             const selectAno = document.getElementById('filtroAno');
-            selectAno.innerHTML = `<option value="">Todos os Anos</option>`;
+            selectAno.innerHTML = `<option value="">Todos</option>`;
             anos.forEach(a => { selectAno.innerHTML += `<option value="${a}">${a}</option>`; });
 
             if (anos.includes(2026)) selectAno.value = "2026";
@@ -427,10 +415,10 @@
             document.getElementById('subTotalPerdido').innerText = fmtMoeda(valorPerdidoCancelado);
             document.getElementById('kpiConversao').innerText = taxaConversao + '%';
 
-            document.getElementById('cntNegociacao').innerText = `${cntNegoc} em negociação`;
-            document.getElementById('cntAprovado').innerText = `${cntAprov} aprovados de ${totalItens}`;
-            document.getElementById('cntPerdido').innerText = `${cntPerd} cancelados/perdidos`;
-            document.getElementById('kpiItensSub').innerText = `${totalItens} itens cotados no total`;
+            document.getElementById('cntNegociacao').innerText = `${cntNegoc} itens`;
+            document.getElementById('cntAprovado').innerText = `${cntAprov} aprovados`;
+            document.getElementById('cntPerdido').innerText = `${cntPerd} cancelados`;
+            document.getElementById('kpiItensSub').innerText = `${totalItens} itens cotados`;
 
             renderizarGraficos(filtrados);
             renderizarTabela(filtrados);
@@ -441,7 +429,7 @@
             document.getElementById('countTabela').innerText = dados.length;
 
             if (dados.length === 0) {
-                corpo.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-slate-400 font-medium">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
+                corpo.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-slate-400 font-medium">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
                 return;
             }
 
@@ -453,16 +441,16 @@
 
                 html += `
                     <tr class="hover:bg-slate-50 transition">
-                        <td class="p-3.5 font-bold text-blue-600">${d.numOrc}</td>
-                        <td class="p-3.5 text-slate-500 text-xs">${d.data}</td>
-                        <td class="p-3.5 font-medium text-slate-800">${d.cliente}</td>
-                        <td class="p-3.5 text-center"><span class="bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded text-xs">${d.uf}</span></td>
-                        <td class="p-3.5 text-slate-700 font-medium">${d.vendedor}</td>
-                        <td class="p-3.5 text-slate-600 text-xs max-w-xs truncate">${d.descricao}</td>
-                        <td class="p-3.5 text-slate-500 text-xs">${d.papel}</td>
-                        <td class="p-3.5 text-right font-mono font-medium">${d.qtd.toLocaleString('pt-BR')}</td>
-                        <td class="p-3.5 text-right font-bold text-slate-800">${fmtMoeda(d.totalEfetivo)}</td>
-                        <td class="p-3.5 text-center"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${badgeCor}">${d.status}</span></td>
+                        <td class="p-2 font-bold text-blue-600">${d.numOrc}</td>
+                        <td class="p-2 text-slate-500 text-[11px]">${d.data}</td>
+                        <td class="p-2 font-medium text-slate-800">${d.cliente}</td>
+                        <td class="p-2 text-center"><span class="bg-slate-100 text-slate-600 font-bold px-1.5 py-0.5 rounded text-[10px]">${d.uf}</span></td>
+                        <td class="p-2 text-slate-700 font-medium">${d.vendedor}</td>
+                        <td class="p-2 text-slate-600 text-[11px] max-w-[200px] truncate">${d.descricao}</td>
+                        <td class="p-2 text-slate-500 text-[11px]">${d.papel}</td>
+                        <td class="p-2 text-right font-mono font-medium">${d.qtd.toLocaleString('pt-BR')}</td>
+                        <td class="p-2 text-right font-bold text-slate-800">${fmtMoeda(d.totalEfetivo)}</td>
+                        <td class="p-2 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeCor}">${d.status}</span></td>
                     </tr>
                 `;
             });
@@ -489,12 +477,12 @@
                     responsive: true, 
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                        legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } }
                     }
                 }
             });
 
-            // 2. Ticket Médio e Qtd por Vendedor (Apenas Vendedores com Status Definido)
+            // 2. Ticket Médio e Qtd por Vendedor (Apenas com Status Definido)
             const vendSummary = {};
             dados.forEach(d => {
                 if (d.vendedor && d.temStatusDefinido) {
@@ -522,7 +510,7 @@
                             label: 'Ticket Médio (R$)',
                             data: arrayTicket,
                             backgroundColor: 'rgba(59, 130, 246, 0.85)',
-                            borderRadius: 6,
+                            borderRadius: 4,
                             yAxisID: 'yTicket',
                             order: 2
                         },
@@ -532,7 +520,7 @@
                             type: 'line',
                             borderColor: '#f59e0b',
                             backgroundColor: '#f59e0b',
-                            pointRadius: 4,
+                            pointRadius: 3,
                             fill: false,
                             yAxisID: 'yQtd',
                             order: 1
@@ -543,12 +531,12 @@
                     responsive: true, 
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 } } }
+                        legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9 } } }
                     },
                     scales: { 
-                        x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },
-                        yTicket: { position: 'left', beginAtZero: true, ticks: { font: { size: 10 }, callback: v => 'R$' + (v/1000).toFixed(0) + 'k' } },
-                        yQtd: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { font: { size: 10 } } }
+                        x: { ticks: { font: { size: 9 }, maxRotation: 30, minRotation: 30 } },
+                        yTicket: { position: 'left', beginAtZero: true, ticks: { font: { size: 9 }, callback: v => 'R$' + (v/1000).toFixed(0) + 'k' } },
+                        yQtd: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { font: { size: 9 } } }
                     }
                 }
             });
@@ -588,20 +576,20 @@
                 data: {
                     labels: vendedoresComValores,
                     datasets: [
-                        { label: 'Em Negociação', data: vendedoresComValores.map(v => vendEfetivoMap[v].negociacaoVal), backgroundColor: '#f59e0b', borderRadius: 4 },
-                        { label: 'Aprovado', data: vendedoresComValores.map(v => vendEfetivoMap[v].aprovadoVal), backgroundColor: '#10b981', borderRadius: 4 },
-                        { label: 'Perdido/Cancelado', data: vendedoresComValores.map(v => vendEfetivoMap[v].perdidoVal), backgroundColor: '#ef4444', borderRadius: 4 }
+                        { label: 'Em Negociação', data: vendedoresComValores.map(v => vendEfetivoMap[v].negociacaoVal), backgroundColor: '#f59e0b', borderRadius: 3 },
+                        { label: 'Aprovado', data: vendedoresComValores.map(v => vendEfetivoMap[v].aprovadoVal), backgroundColor: '#10b981', borderRadius: 3 },
+                        { label: 'Perdido/Cancelado', data: vendedoresComValores.map(v => vendEfetivoMap[v].perdidoVal), backgroundColor: '#ef4444', borderRadius: 3 }
                     ]
                 },
                 options: { 
                     responsive: true, 
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 } } }
+                        legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9 } } }
                     },
                     scales: {
-                        x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },
-                        y: { beginAtZero: true, ticks: { font: { size: 10 }, callback: v => 'R$' + (v/1000).toFixed(0) + 'k' } }
+                        x: { ticks: { font: { size: 9 }, maxRotation: 30, minRotation: 30 } },
+                        y: { beginAtZero: true, ticks: { font: { size: 9 }, callback: v => 'R$' + (v/1000).toFixed(0) + 'k' } }
                     }
                 }
             });
