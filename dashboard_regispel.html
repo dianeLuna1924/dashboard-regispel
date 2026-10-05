@@ -35,7 +35,7 @@
         <div class="flex flex-wrap gap-3">
             <label class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm px-4 py-2.5 rounded-xl cursor-pointer flex items-center gap-2 transition shadow-md">
                 <i class="fa-solid fa-file-excel"></i> Carregar Planilha Local
-                <input type="file" id="inputExcel" accept=".xlsx, .xls, .xlsm" class="hidden">
+                <input type="file" id="inputExcel" accept=".xlsx, .xls, .xlsm, .csv" class="hidden">
             </label>
             <button id="btnLimpar" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-semibold text-sm px-4 py-2.5 rounded-xl transition shadow-sm">
                 <i class="fa-solid fa-arrows-rotate mr-1.5 text-slate-400"></i> Limpar Filtros
@@ -270,40 +270,53 @@
         let chartQtdVendedorInstance = null;
         let chartVendedorEfetivoInstance = null;
 
-        // LEITURA SIMPLES E DIRETA DO ARQUIVO LOCAL (SEM CÓDIGOS ASSÍNCRONOS COMPLEXOS)
         document.getElementById('inputExcel').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
+            const isCSV = file.name.toLowerCase().endsWith('.csv');
             const reader = new FileReader();
 
-            reader.onload = function(evt) {
-                try {
-                    const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-
-                    let sheetName = "Base_Orcamentos";
-                    if (!workbook.SheetNames.includes(sheetName)) {
-                        sheetName = workbook.SheetNames[0];
+            if (isCSV) {
+                reader.onload = function(evt) {
+                    try {
+                        const text = evt.target.result;
+                        const lines = text.split(/\r\n|\n/);
+                        const json = lines.map(line => {
+                            if (line.includes(';')) return line.split(';');
+                            return line.split(',');
+                        });
+                        processarDadosBase(json);
+                        exibirSucesso(file.name);
+                    } catch (err) {
+                        alert("Erro ao ler o ficheiro CSV.");
                     }
-
-                    const worksheet = workbook.Sheets[sheetName];
-                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
-
-                    processarDadosBase(json);
-
-                    const statusDiv = document.getElementById('statusCarregamento');
-                    statusDiv.className = "mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm";
-                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>Planilha (${file.name}) processada com sucesso!</span>`;
-                    setTimeout(() => statusDiv.classList.add('hidden'), 3500);
-                } catch (err) {
-                    console.error("Erro ao ler ficheiro:", err);
-                    alert("Atenção: Para carregar a planilha da rede, selecione o arquivo 'Base_Orcamentos.xlsx'. Se estiver aberto no Excel, feche-o e tente novamente.");
-                }
-            };
-
-            reader.readAsArrayBuffer(file);
+                };
+                reader.readAsText(file, 'ISO-8859-1');
+            } else {
+                reader.onload = function(evt) {
+                    try {
+                        const data = new Uint8Array(evt.target.result);
+                        const workbook = XLSX.read(data, { type: 'array', cellDates: true, raw: true });
+                        let sheetName = workbook.SheetNames.find(s => s.trim().toLowerCase().includes("base")) || workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[sheetName];
+                        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+                        processarDadosBase(json);
+                        exibirSucesso(file.name);
+                    } catch (err) {
+                        alert("Não foi possível processar o ficheiro Excel. Para resolver definitivamente, no Excel clique em Guardar Como -> CSV (Separado por ponto e vírgula) e selecione o novo ficheiro.");
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
         });
+
+        function exibirSucesso(nome) {
+            const statusDiv = document.getElementById('statusCarregamento');
+            statusDiv.className = "mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm";
+            statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>Ficheiro (${nome}) carregado com sucesso! (${dadosGlobais.length} registos)</span>`;
+            setTimeout(() => statusDiv.classList.add('hidden'), 3500);
+        }
 
         function converterValor(val) {
             if (val === undefined || val === null || val === "" || val === "-") return 0;
@@ -325,7 +338,7 @@
                 const r = linhas[i];
                 if (!r || r.length < 3) continue;
 
-                const numOrc = (r[0] || "").toString().trim();
+                const numOrc = (r[0] || "").toString().trim().replace(/"/g, '');
                 if (!numOrc) continue;
 
                 let valQ = converterValor(r[16]);
@@ -344,8 +357,8 @@
                     else valR = valQ;
                 }
 
-                let statusBruto = (r[18] || "").toString().trim();
-                let motivoPerda = (r[20] || "").toString().trim();
+                let statusBruto = (r[18] || "").toString().trim().replace(/"/g, '');
+                let motivoPerda = (r[20] || "").toString().trim().replace(/"/g, '');
 
                 let statusLimpo = statusBruto.toUpperCase();
                 let motivoLimpo = motivoPerda.toUpperCase();
@@ -372,6 +385,7 @@
                 let mes = null;
 
                 if (r[1]) {
+                    let rawData = r[1].toString().replace(/"/g, '').trim();
                     if (r[1] instanceof Date) {
                         ano = r[1].getFullYear();
                         mes = r[1].getMonth() + 1;
@@ -382,7 +396,7 @@
                         mes = dateObj.m;
                         dataFormatada = `${String(dateObj.d).padStart(2,'0')}/${String(dateObj.m).padStart(2,'0')}/${dateObj.y}`;
                     } else {
-                        dataFormatada = r[1].toString().substring(0, 10);
+                        dataFormatada = rawData.substring(0, 10);
                         const parts = dataFormatada.split('/');
                         if (parts.length === 3) {
                             ano = parseInt(parts[2]);
@@ -396,11 +410,11 @@
                     data: dataFormatada,
                     ano: ano,
                     mes: mes,
-                    cliente: (r[2] || "NÃO INFORMADO").toString().trim(),
-                    uf: (r[3] || "SP").toString().trim(),
-                    vendedor: (r[4] || "NÃO INFORMADO").toString().trim(),
-                    descricao: (r[5] || "").toString().trim(),
-                    papel: (r[6] || "").toString().trim(),
+                    cliente: (r[2] || "NÃO INFORMADO").toString().trim().replace(/"/g, ''),
+                    uf: (r[3] || "SP").toString().trim().replace(/"/g, ''),
+                    vendedor: (r[4] || "NÃO INFORMADO").toString().trim().replace(/"/g, ''),
+                    descricao: (r[5] || "").toString().trim().replace(/"/g, ''),
+                    papel: (r[6] || "").toString().trim().replace(/"/g, ''),
                     qtd: converterValor(r[7]),
                     totalEfetivo: valQ,
                     valorColunaR: valR,
@@ -510,7 +524,7 @@
             document.getElementById('countTabela').innerText = dados.length;
 
             if (dados.length === 0) {
-                corpo.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
+                corpo.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Nenhum registo encontrado para os filtros selecionados.</td></tr>`;
                 return;
             }
 
@@ -542,7 +556,6 @@
         }
 
         function renderizarGraficos(dados) {
-            // 1. Status
             const statusCounts = {};
             dados.forEach(d => { statusCounts[d.status] = (statusCounts[d.status] || 0) + 1; });
 
@@ -567,7 +580,6 @@
                 }
             });
 
-            // 2. MOTIVOS DE PERDA
             const motivosMap = {};
             dados.filter(d => d.status === "Perdido/Cancelado").forEach(d => {
                 const m = d.motivoPerda || "Não Especificado";
@@ -595,7 +607,6 @@
                 }
             });
 
-            // 3. Ticket Médio por Vendedor
             const vendSummary = {};
             dados.forEach(d => {
                 if (d.vendedor) {
@@ -654,7 +665,6 @@
                 }
             });
 
-            // 4. Volume R$ por Vendedor (Apenas Status Preenchidos)
             const vendEfetivoMap = {};
 
             dados.forEach(d => {
