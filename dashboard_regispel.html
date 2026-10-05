@@ -270,29 +270,18 @@
         let chartQtdVendedorInstance = null;
         let chartVendedorEfetivoInstance = null;
 
-        // TENTATIVA SILENCIOSA DE BUSCA DE ARQUIVO NO SERVIDOR (SEM TRAVAR O PAINEL)
         window.addEventListener('DOMContentLoaded', () => {
             fetch('Base_Orcamentos.xlsx?v=' + new Date().getTime())
                 .then(res => { if (res.ok) return res.arrayBuffer(); throw new Error(); })
-                .then(buffer => {
-                    const data = new Uint8Array(buffer);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    let sheetName = "Base_Orcamentos";
-                    if (!workbook.SheetNames.includes(sheetName)) sheetName = workbook.SheetNames[0];
-                    const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: true });
-                    processarDadosBase(json);
-                    
-                    const statusDiv = document.getElementById('statusCarregamento');
-                    statusDiv.className = "mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm";
-                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>Planilha Base_Orcamentos.xlsx sincronizada do servidor com sucesso!</span>`;
-                    setTimeout(() => statusDiv.classList.add('hidden'), 3500);
-                })
+                .then(buffer => { lerEProcessarArrayBuffer(buffer); })
                 .catch(() => {
-                    // Silencioso - mantem a orientacao de carregar arquivo local pronta
+                    fetch('Base_Orcamentos.xlsm?v=' + new Date().getTime())
+                        .then(res => { if (res.ok) return res.arrayBuffer(); throw new Error(); })
+                        .then(buffer => { lerEProcessarArrayBuffer(buffer); })
+                        .catch(() => {});
                 });
         });
 
-        // RECEPTOR DO ARQUIVO SELECIONADO PELO BOTÃO VERDE
         document.getElementById('inputExcel').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -300,28 +289,34 @@
             const reader = new FileReader();
             reader.onload = function(evt) {
                 try {
-                    const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    let sheetName = "Base_Orcamentos";
-                    if (!workbook.SheetNames.includes(sheetName)) sheetName = workbook.SheetNames[0];
-
-                    const worksheet = workbook.Sheets[sheetName];
-                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
-
-                    processarDadosBase(json);
-
-                    const statusDiv = document.getElementById('statusCarregamento');
-                    statusDiv.classList.remove('hidden');
-                    statusDiv.className = "mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm";
-                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>Planilha local (${file.name}) processada com sucesso!</span>`;
-                    setTimeout(() => statusDiv.classList.add('hidden'), 4000);
+                    lerEProcessarArrayBuffer(evt.target.result, file.name);
                 } catch (err) {
-                    alert("Erro ao ler o arquivo Excel. Verifique se o ficheiro está em formato .xlsx válido.");
+                    alert("Erro ao ler o ficheiro Excel. Certifique-se de selecionar uma planilha válida.");
                 }
             };
             reader.readAsArrayBuffer(file);
         });
+
+        function lerEProcessarArrayBuffer(buffer, nomeArquivo = "") {
+            const data = new Uint8Array(buffer);
+            const workbook = XLSX.read(data, { type: 'array', cellDates: true, cellNF: false, cellText: false });
+            
+            let sheetName = "Base_Orcamentos";
+            if (!workbook.SheetNames.includes(sheetName)) {
+                sheetName = workbook.SheetNames[0];
+            }
+
+            const worksheet = workbook.Sheets[sheetName];
+            const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+
+            processarDadosBase(json);
+
+            const statusDiv = document.getElementById('statusCarregamento');
+            statusDiv.classList.remove('hidden');
+            statusDiv.className = "mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm";
+            statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>Planilha ${nomeArquivo ? '(' + nomeArquivo + ')' : ''} carregada e processada com sucesso!</span>`;
+            setTimeout(() => statusDiv.classList.add('hidden'), 4000);
+        }
 
         function converterValor(val) {
             if (val === undefined || val === null || val === "" || val === "-") return 0;
@@ -390,7 +385,11 @@
                 let mes = null;
 
                 if (r[1]) {
-                    if (typeof r[1] === 'number') {
+                    if (r[1] instanceof Date) {
+                        ano = r[1].getFullYear();
+                        mes = r[1].getMonth() + 1;
+                        dataFormatada = `${String(r[1].getDate()).padStart(2,'0')}/${String(mes).padStart(2,'0')}/${ano}`;
+                    } else if (typeof r[1] === 'number') {
                         const dateObj = XLSX.SSF.parse_date_code(r[1]);
                         ano = dateObj.y;
                         mes = dateObj.m;
@@ -556,7 +555,6 @@
         }
 
         function renderizarGraficos(dados) {
-            // 1. Status
             const statusCounts = {};
             dados.forEach(d => { statusCounts[d.status] = (statusCounts[d.status] || 0) + 1; });
 
@@ -581,7 +579,6 @@
                 }
             });
 
-            // 2. MOTIVOS DE PERDA
             const motivosMap = {};
             dados.filter(d => d.status === "Perdido/Cancelado").forEach(d => {
                 const m = d.motivoPerda || "Não Especificado";
@@ -609,7 +606,6 @@
                 }
             });
 
-            // 3. Ticket Médio por Vendedor
             const vendSummary = {};
             dados.forEach(d => {
                 if (d.vendedor) {
@@ -668,7 +664,6 @@
                 }
             });
 
-            // 4. Volume R$ por Vendedor (Apenas com Status Preenchidos)
             const vendEfetivoMap = {};
 
             dados.forEach(d => {
