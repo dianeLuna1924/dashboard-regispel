@@ -35,7 +35,7 @@
         <div class="flex flex-wrap gap-3">
             <label class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm px-4 py-2.5 rounded-xl cursor-pointer flex items-center gap-2 transition shadow-md">
                 <i class="fa-solid fa-file-excel"></i> Carregar Planilha Local
-                <input type="file" id="inputExcel" accept=".xlsx, .xls, .xlsm" class="hidden">
+                <input type="file" id="inputExcel" accept=".xlsx, .xls, .xlsm" class="hidden" onchange="carregarArquivoManual(event)">
             </label>
             <button id="btnLimpar" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-semibold text-sm px-4 py-2.5 rounded-xl transition shadow-sm">
                 <i class="fa-solid fa-arrows-rotate mr-1.5 text-slate-400"></i> Limpar Filtros
@@ -46,7 +46,7 @@
     <!-- Status de Carregamento Automático -->
     <div id="statusCarregamento" class="mb-6 p-4 bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm">
         <i id="iconeStatus" class="fa-solid fa-circle-notch fa-spin text-base text-blue-600"></i>
-        <span id="textoStatus">Procurando planilha do servidor...</span>
+        <span id="textoStatus">A carregar dados da planilha do servidor...</span>
     </div>
 
     <!-- Filtros Superiores -->
@@ -289,7 +289,7 @@
 
             for (const path of rotasTentativa) {
                 try {
-                    textoStatus.innerText = `A conectar planilha (${path})...`;
+                    textoStatus.innerText = `A procurar planilha (${path})...`;
                     const response = await fetch(path + '?v=' + new Date().getTime());
                     
                     if (response.ok) {
@@ -322,8 +322,8 @@
             }
         }
 
-        // CARREGAMENTO DIRETO NO SELETOREM EXCEL
-        document.getElementById('inputExcel').addEventListener('change', function(e) {
+        // CARREGAMENTO DIRETO DO ARQUIVO LOCAL
+        function carregarArquivoManual(e) {
             const file = e.target.files[0];
             if (!file) return;
 
@@ -344,14 +344,14 @@
                     const statusDiv = document.getElementById('statusCarregamento');
                     statusDiv.classList.remove('hidden');
                     statusDiv.className = "mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm";
-                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>Planilha local carregada com sucesso! (${json.length - 2} linhas processadas)</span>`;
+                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>Planilha local (${file.name}) carregada com sucesso!</span>`;
                     setTimeout(() => statusDiv.classList.add('hidden'), 4000);
                 } catch (err) {
-                    alert("Erro ao ler o arquivo Excel selecionado. Verifique se o arquivo não está corrompido.");
+                    alert("Erro ao ler a planilha selecionada. Verifique se o ficheiro está em formato Excel válido.");
                 }
             };
             reader.readAsArrayBuffer(file);
-        });
+        }
 
         function converterValor(val) {
             if (val === undefined || val === null || val === "" || val === "-") return 0;
@@ -393,7 +393,7 @@
                 }
 
                 let statusBruto = (r[18] || "").toString().trim();
-                let motivoPerda = (r[20] || "").toString().trim(); // COLUNA U: Motivo de Perda
+                let motivoPerda = (r[20] || "").toString().trim();
 
                 let statusLimpo = statusBruto.toUpperCase();
                 let motivoLimpo = motivoPerda.toUpperCase();
@@ -515,215 +515,4 @@
             let cntNegoc = 0;
             let cntPerd = 0;
 
-            filtrados.forEach(d => {
-                somaColunaR += d.valorColunaR;
-                somaTotalColunaQ += d.totalEfetivo;
-
-                if (d.status === "Aprovado") {
-                    valorAprovadoEfetivo += d.totalEfetivo;
-                    cntAprov++;
-                } else if (d.status === "Perdido/Cancelado") {
-                    valorPerdidoCancelado += d.totalEfetivo;
-                    cntPerd++;
-                } else if (d.status === "Em Negociação") {
-                    valorNegociacao += d.totalEfetivo;
-                    cntNegoc++;
-                }
-            });
-
-            const taxaConversao = totalItens > 0 ? ((cntAprov / totalItens) * 100).toFixed(1) : 0;
-
-            document.getElementById('kpiSomaTotalGeral').innerText = fmtMoeda(somaTotalColunaQ);
-            document.getElementById('subTotalNegociacao').innerText = fmtMoeda(valorNegociacao);
-            document.getElementById('subTotalAprovadoEfetivo').innerText = fmtMoeda(valorAprovadoEfetivo);
-            document.getElementById('subTotalPerdido').innerText = fmtMoeda(valorPerdidoCancelado);
-            document.getElementById('kpiTicketMedio').innerText = fmtMoeda(somaColunaR);
-
-            document.getElementById('kpiItens').innerText = totalItens;
-            document.getElementById('cntNegociacao').innerText = `${cntNegoc} em negociação`;
-            document.getElementById('cntAprovado').innerText = `${cntAprov} de ${totalItens}`;
-            document.getElementById('cntPerdido').innerText = `${cntPerd} cancelados`;
-            document.getElementById('kpiConversao').innerText = taxaConversao + '%';
-
-            renderizarGraficos(filtrados);
-            renderizarTabela(filtrados);
-        }
-
-        function renderizarTabela(dados) {
-            const corpo = document.getElementById('corpoTabela');
-            document.getElementById('countTabela').innerText = dados.length;
-
-            if (dados.length === 0) {
-                corpo.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-medium">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
-                return;
-            }
-
-            let html = "";
-            dados.forEach(d => {
-                let badgeCor = "bg-slate-100 text-slate-700 border border-slate-300";
-                if (d.status === "Aprovado") badgeCor = "bg-emerald-100 text-emerald-800 border border-emerald-300";
-                else if (d.status === "Perdido/Cancelado") badgeCor = "bg-rose-100 text-rose-800 border border-rose-300";
-                else if (d.status === "Em Negociação") badgeCor = "bg-amber-100 text-amber-800 border border-amber-300";
-                else if (d.status === "Aguardando Retorno") badgeCor = "bg-sky-100 text-sky-800 border border-sky-300";
-
-                html += `
-                    <tr class="hover:bg-slate-100/70 transition even:bg-slate-50/50">
-                        <td class="p-3 font-bold text-blue-600">${d.numOrc}</td>
-                        <td class="p-3 text-slate-500 text-xs">${d.data}</td>
-                        <td class="p-3 font-semibold text-slate-800">${d.cliente}</td>
-                        <td class="p-3 text-center"><span class="bg-slate-200/70 text-slate-700 font-bold px-2 py-0.5 rounded text-xs">${d.uf}</span></td>
-                        <td class="p-3 text-slate-700 font-medium">${d.vendedor}</td>
-                        <td class="p-3 text-slate-600 text-xs max-w-xs truncate">${d.descricao}</td>
-                        <td class="p-3 text-slate-500 text-xs">${d.papel}</td>
-                        <td class="p-3 text-right font-mono font-medium">${d.qtd.toLocaleString('pt-BR')}</td>
-                        <td class="p-3 text-right font-bold text-slate-900">${fmtMoeda(d.totalEfetivo)}</td>
-                        <td class="p-3 text-center"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${badgeCor}">${d.status}</span></td>
-                        <td class="p-3 text-xs text-rose-700 font-semibold">${d.motivoPerda}</td>
-                    </tr>
-                `;
-            });
-            corpo.innerHTML = html;
-        }
-
-        function renderizarGraficos(dados) {
-            // 1. Status
-            const statusCounts = {};
-            dados.forEach(d => { statusCounts[d.status] = (statusCounts[d.status] || 0) + 1; });
-
-            if (chartStatusInstance) chartStatusInstance.destroy();
-            chartStatusInstance = new Chart(document.getElementById('chartStatus'), {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(statusCounts),
-                    datasets: [{
-                        data: Object.values(statusCounts),
-                        backgroundColor: ['#38bdf8', '#f59e0b', '#10b981', '#ef4444', '#6366f1', '#64748b'],
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10, weight: 'bold' } } }
-                    }
-                }
-            });
-
-            // 2. MOTIVOS DE PERDA (GRÁFICO COLUNA U)
-            const motivosMap = {};
-            dados.filter(d => d.status === "Perdido/Cancelado").forEach(d => {
-                const m = d.motivoPerda || "Não Especificado";
-                motivosMap[m] = (motivosMap[m] || 0) + 1;
-            });
-
-            if (chartMotivosPerdaInstance) chartMotivosPerdaInstance.destroy();
-            chartMotivosPerdaInstance = new Chart(document.getElementById('chartMotivosPerda'), {
-                type: 'pie',
-                data: {
-                    labels: Object.keys(motivosMap).length > 0 ? Object.keys(motivosMap) : ['Sem Perdas'],
-                    datasets: [{
-                        data: Object.keys(motivosMap).length > 0 ? Object.values(motivosMap) : [1],
-                        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#8b5cf6', '#ec4899', '#cbd5e1'],
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10, weight: 'bold' } } }
-                    }
-                }
-            });
-
-            // 3. Ticket Médio por Vendedor
-            const vendSummary = {};
-            dados.forEach(d => {
-                if (d.vendedor) {
-                    if (!vendSummary[d.vendedor]) {
-                        vendSummary[d.vendedor] = { qtd: 0, ticketMedio: 0 };
-                    }
-                    vendSummary[d.vendedor].qtd += 1;
-                    vendSummary[d.vendedor].ticketMedio += d.valorColunaR;
-                }
-            });
-
-            const vendedoresComTicket = Object.keys(vendSummary)
-                .sort((a,b) => vendSummary[b].ticketMedio - vendSummary[a].ticketMedio);
-
-            const arrayQtd = vendedoresComTicket.map(v => vendSummary[v].qtd);
-            const arrayTicket = vendedoresComTicket.map(v => vendSummary[v].ticketMedio);
-
-            if (chartQtdVendedorInstance) chartQtdVendedorInstance.destroy();
-            chartQtdVendedorInstance = new Chart(document.getElementById('chartQtdVendedor'), {
-                type: 'bar',
-                data: {
-                    labels: vendedoresComTicket,
-                    datasets: [
-                        {
-                            label: 'Ticket Médio (R$)',
-                            data: arrayTicket,
-                            backgroundColor: 'rgba(59, 130, 246, 0.85)',
-                            borderRadius: 6,
-                            yAxisID: 'yTicket',
-                            order: 2
-                        },
-                        {
-                            label: 'Qtd Orçamentos',
-                            data: arrayQtd,
-                            type: 'line',
-                            borderColor: '#f59e0b',
-                            backgroundColor: '#f59e0b',
-                            pointRadius: 4,
-                            fill: false,
-                            yAxisID: 'yQtd',
-                            order: 1
-                        }
-                    ]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9, weight: 'bold' } } }
-                    },
-                    scales: { 
-                        x: { ticks: { font: { size: 9, weight: '600' }, maxRotation: 45, minRotation: 45 } },
-                        yTicket: { position: 'left', beginAtZero: true, ticks: { font: { size: 9 }, callback: v => 'R$' + (v/1000).toFixed(0) + 'k' } },
-                        yQtd: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { font: { size: 9 } } }
-                    }
-                }
-            });
-
-            // 4. Volume R$ por Vendedor (Apenas com Status Preenchido)
-            const vendEfetivoMap = {};
-
-            dados.forEach(d => {
-                if (d.vendedor && d.temStatusDefinido) {
-                    if (!vendEfetivoMap[d.vendedor]) {
-                        vendEfetivoMap[d.vendedor] = { 
-                            negociacaoVal: 0,
-                            aprovadoVal: 0,
-                            perdidoVal: 0,
-                            valTotalQ: 0
-                        };
-                    }
-                    if (d.status === "Perdido/Cancelado") {
-                        vendEfetivoMap[d.vendedor].perdidoVal += d.totalEfetivo;
-                    } else if (d.status === "Aprovado") {
-                        vendEfetivoMap[d.vendedor].aprovadoVal += d.totalEfetivo;
-                    } else if (d.status === "Em Negociação") {
-                        vendEfetivoMap[d.vendedor].negociacaoVal += d.totalEfetivo;
-                    }
-                    vendEfetivoMap[d.vendedor].valTotalQ += d.totalEfetivo;
-                }
-            });
-
-            const vendedoresComValores = Object.keys(vendEfetivoMap)
-                .sort((a,b) => vendEfetivoMap[b].valTotalQ - vendEfetivoMap[a].valTotalQ);
-
-            if (chartVendedorEfetivoInstance) chartVendedorEfetivoInstance.destroy();
-            chartVendedorEfetivoInstance = new Chart
+            filtrados.forEach(d
