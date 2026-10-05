@@ -43,10 +43,10 @@
         </div>
     </header>
 
-    <!-- Status de Carregamento Automático -->
-    <div id="statusCarregamento" class="mb-6 p-4 bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm">
-        <i id="iconeStatus" class="fa-solid fa-circle-notch fa-spin text-base text-blue-600"></i>
-        <span id="textoStatus">A verificar dados da planilha...</span>
+    <!-- Status de Carregamento -->
+    <div id="statusCarregamento" class="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm">
+        <i class="fa-solid fa-circle-info text-amber-600 text-base"></i>
+        <span>Clique no botão verde <strong>"Carregar Planilha Local"</strong> no canto superior direito para carregar a sua planilha do computador.</span>
     </div>
 
     <!-- Filtros Superiores -->
@@ -270,36 +270,29 @@
         let chartQtdVendedorInstance = null;
         let chartVendedorEfetivoInstance = null;
 
-        // TENTATIVA DE CARREGAMENTO AUTOMÁTICO SEGURO (SEM BLOQUEAR A TELA)
+        // TENTATIVA SILENCIOSA DE BUSCA DE ARQUIVO NO SERVIDOR (SEM TRAVAR O PAINEL)
         window.addEventListener('DOMContentLoaded', () => {
-            const statusDiv = document.getElementById('statusCarregamento');
-            
             fetch('Base_Orcamentos.xlsx?v=' + new Date().getTime())
-                .then(res => {
-                    if (!res.ok) throw new Error("Não encontrada");
-                    return res.arrayBuffer();
-                })
+                .then(res => { if (res.ok) return res.arrayBuffer(); throw new Error(); })
                 .then(buffer => {
                     const data = new Uint8Array(buffer);
                     const workbook = XLSX.read(data, { type: 'array' });
                     let sheetName = "Base_Orcamentos";
                     if (!workbook.SheetNames.includes(sheetName)) sheetName = workbook.SheetNames[0];
                     const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: true });
-                    
                     processarDadosBase(json);
                     
+                    const statusDiv = document.getElementById('statusCarregamento');
                     statusDiv.className = "mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm";
-                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>Planilha Base_Orcamentos.xlsx sincronizada com sucesso!</span>`;
-                    setTimeout(() => statusDiv.classList.add('hidden'), 3000);
+                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>Planilha Base_Orcamentos.xlsx sincronizada do servidor com sucesso!</span>`;
+                    setTimeout(() => statusDiv.classList.add('hidden'), 3500);
                 })
                 .catch(() => {
-                    // SE FALHAR O SERVIDO, MOSTRA ORIENTAÇÃO CLARA E DESIMPEDE A TELA
-                    statusDiv.className = "mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm";
-                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-info text-amber-600 text-base"></i><span>Clique no botão verde <strong>"Carregar Planilha Local"</strong> no topo direito para abrir a planilha do seu computador.</span>`;
+                    // Silencioso - mantem a orientacao de carregar arquivo local pronta
                 });
         });
 
-        // LEITURA DIRETA DO ARQUIVO SELECIONADO NO COMPUTADOR
+        // RECEPTOR DO ARQUIVO SELECIONADO PELO BOTÃO VERDE
         document.getElementById('inputExcel').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -321,10 +314,10 @@
                     const statusDiv = document.getElementById('statusCarregamento');
                     statusDiv.classList.remove('hidden');
                     statusDiv.className = "mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-3 shadow-sm";
-                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>Planilha local (${file.name}) carregada com sucesso!</span>`;
-                    setTimeout(() => statusDiv.classList.add('hidden'), 3500);
+                    statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>Planilha local (${file.name}) processada com sucesso!</span>`;
+                    setTimeout(() => statusDiv.classList.add('hidden'), 4000);
                 } catch (err) {
-                    alert("Erro ao ler a planilha. Certifique-se de que é um ficheiro Excel (.xlsx) válido.");
+                    alert("Erro ao ler o arquivo Excel. Verifique se o ficheiro está em formato .xlsx válido.");
                 }
             };
             reader.readAsArrayBuffer(file);
@@ -675,7 +668,7 @@
                 }
             });
 
-            // 4. Volume R$ por Vendedor (Apenas Status Preenchidos)
+            // 4. Volume R$ por Vendedor (Apenas com Status Preenchidos)
             const vendEfetivoMap = {};
 
             dados.forEach(d => {
